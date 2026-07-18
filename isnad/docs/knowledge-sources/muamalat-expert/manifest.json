@@ -1,0 +1,26 @@
+{
+  "name": "muamalat_expert",
+  "display_name": "Muʿāmalāt Expert",
+  "version": "1.0.0",
+  "type": "addon_skill",
+  "depends_on": [
+    "islamic_teacher_core"
+  ],
+  "description": "Islamic finance and modern financial-life add-on covering halal income, riba, zakah, business, investing, crypto, debt, contracts, inheritance, and financial ethics.",
+  "entrypoint": "skill.md",
+  "shared_files": [
+    "source-policy.md",
+    "integration.md",
+    "evaluation.md"
+  ],
+  "tags": [
+    "islamic-finance",
+    "fiqh-al-muamalat",
+    "riba",
+    "zakah",
+    "halal-investing",
+    "business-fiqh",
+    "crypto",
+    "inheritance"
+  ]
+}

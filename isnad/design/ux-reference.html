@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Isnad — UX reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=Noto+Naskh+Arabic:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #16231f;
+    --pine: #123832;
+    --pine-deep: #0c2622;
+    --gold: #b8892f;
+    --gold-soft: #d9b86a;
+    --parchment: #efe7d8;
+    --parchment-soft: #f6f1e6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+  }
+  .font-display { font-family: 'Fraunces', serif; }
+  .font-arabic { font-family: 'Noto Naskh Arabic', serif; }
+
+  .star-8 {
+    display: inline-block;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  }
+  @keyframes drift { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .star-spin { animation: drift 6s linear infinite; }
+  @media (prefers-reduced-motion: reduce) { .star-spin { animation: none; } }
+
+  /* --- Prototype harness (not part of the app itself) --- */
+  .harness {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--pine-deep); color: var(--parchment-soft);
+    padding: 10px 16px; display: flex; gap: 8px; align-items: center;
+    font-size: 12px; flex-wrap: wrap;
+  }
+  .harness b { font-family: 'Fraunces', serif; margin-right: 6px; font-weight: 600; }
+  .harness button {
+    background: transparent; border: 1px solid rgba(246,241,230,0.35); color: var(--parchment-soft);
+    padding: 5px 10px; border-radius: 999px; font-size: 12px; cursor: pointer; font-family: 'Inter', sans-serif;
+  }
+  .harness button.active { background: var(--gold); border-color: var(--gold); color: var(--pine-deep); font-weight: 600; }
+  .harness button:hover:not(.active) { border-color: var(--gold-soft); }
+
+  .app { max-width: 720px; margin: 0 auto; min-height: calc(100vh - 44px); display: flex; flex-direction: column; }
+
+  header.appbar {
+    border-bottom: 1px solid rgba(18,56,50,0.1);
+    padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+  }
+  header.appbar .brand { display: flex; align-items: center; gap: 10px; }
+  header.appbar .brand .star-8 { background: var(--pine); width: 16px; height: 16px; }
+  header.appbar .brand span.name { font-family: 'Fraunces', serif; font-size: 18px; letter-spacing: -0.01em; color: var(--pine-deep); }
+  header.appbar .tagline { font-size: 12px; color: rgba(18,56,50,0.6); }
+  @media (max-width: 640px) { header.appbar .tagline { display: none; } }
+  header.appbar .newchat {
+    font-size: 12px; color: var(--pine); border: 1px solid rgba(18,56,50,0.2); border-radius: 999px;
+    padding: 5px 12px; background: transparent; cursor: pointer;
+  }
+  header.appbar .newchat:hover { background: rgba(18,56,50,0.05); }
+
+  /* Landing */
+  .landing { padding: 56px 20px 40px; text-align: center; }
+  @media (max-width: 640px) { .landing { padding: 40px 20px 30px; } }
+  .chain { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 32px; }
+  @media (max-width: 640px) { .chain { gap: 10px; } }
+  .chain .link { display: flex; flex-direction: column; align-items: center; }
+  .chain .link .star-8 { background: var(--gold); width: 16px; height: 16px; }
+  .chain .link .label { margin-top: 8px; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(18,56,50,0.7); font-weight: 500; }
+  @media (max-width: 640px) { .chain .link .label { font-size: 9px; } }
+  .chain .connector { width: 48px; height: 1px; background: rgba(184,137,47,0.5); margin: 0 4px 22px; }
+  @media (max-width: 640px) { .chain .connector { width: 20px; } }
+
+  .landing h1 { font-family: 'Fraunces', serif; font-size: 44px; line-height: 1.1; color: var(--pine-deep); max-width: 560px; margin: 0 auto; }
+  @media (max-width: 640px) { .landing h1 { font-size: 30px; } }
+  .landing p.sub { margin: 16px auto 0; max-width: 540px; font-size: 15px; line-height: 1.6; color: rgba(22,35,31,0.7); }
+  @media (max-width: 640px) { .landing p.sub { font-size: 13px; } }
+
+  .starters { margin-top: 36px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 620px; margin-left: auto; margin-right: auto; }
+  .starters button {
+    text-align: left; font-size: 13.5px; padding: 9px 15px; border-radius: 999px;
+    border: 1px solid rgba(18,56,50,0.2); color: var(--pine-deep); background: transparent; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: background 0.15s, border-color 0.15s;
+  }
+  .starters button:hover { background: rgba(18,56,50,0.05); border-color: rgba(18,56,50,0.4); }
+
+  /* Conversation */
+  .conversation { flex: 1; overflow-y: auto; padding: 28px 20px; display: flex; flex-direction: column; gap: 20px; }
+
+  .msg-user { align-self: flex-end; max-width: 85%; }
+  .msg-user .bubble {
+    border-radius: 18px 18px 4px 18px; background: var(--pine); color: var(--parchment-soft);
+    padding: 10px 16px; font-size: 14.5px; line-height: 1.5;
+  }
+
+  .msg-assistant { align-self: flex-start; max-width: 100%; width: 100%; }
+  .answer-card {
+    border-radius: 18px; background: var(--parchment-soft); border: 1px solid rgba(18,56,50,0.15);
+    padding: 18px 22px; box-shadow: 0 1px 2px rgba(12,38,34,0.05);
+  }
+  @media (max-width: 640px) { .answer-card { padding: 16px; } }
+
+  .badge-finance {
+    display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; background: rgba(18,56,50,0.1);
+    padding: 4px 10px; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--pine); margin-bottom: 12px;
+  }
+  .badge-finance .star-8 { background: var(--gold); width: 7px; height: 7px; }
+
+  .answer-body { font-size: 14.5px; line-height: 1.7; color: var(--ink); }
+  .answer-body h3 { font-family: 'Fraunces', serif; font-weight: 500; color: var(--pine-deep); font-size: 16px; margin: 18px 0 6px; }
+  .answer-body h3:first-child { margin-top: 0; }
+  .answer-body strong { color: var(--pine-deep); }
+  .answer-body p { margin: 0 0 10px; }
+
+  /* Source chain per answer — the signature addition */
+  .source-chain { margin-top: 16px; padding-top: 14px; border-top: 1px dashed rgba(18,56,50,0.18); }
+  .source-chain .sc-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(18,56,50,0.5); margin-bottom: 10px; font-weight: 600; }
+  .sc-tiers { display: flex; flex-direction: column; gap: 6px; }
+  .sc-tier {
+    border: 1px solid rgba(18,56,50,0.12); border-radius: 10px; background: rgba(255,255,255,0.5);
+    overflow: hidden;
+  }
+  .sc-tier summary {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px; cursor: pointer;
+    font-size: 13px; font-weight: 500; color: var(--pine-deep); list-style: none;
+  }
+  .sc-tier summary::-webkit-details-marker { display: none; }
+  .sc-tier summary .star-8 { background: var(--gold); width: 9px; height: 9px; flex-shrink: 0; }
+  .sc-tier summary .tier-name { flex: 1; }
+  .sc-tier summary .tier-count { font-size: 11px; color: rgba(18,56,50,0.5); font-weight: 400; }
+  .sc-tier summary .chevron { font-size: 10px; color: rgba(18,56,50,0.4); transition: transform 0.15s; }
+  .sc-tier[open] summary .chevron { transform: rotate(90deg); }
+  .sc-tier .tier-body { padding: 0 12px 12px 31px; display: flex; flex-direction: column; gap: 8px; }
+  .cite { font-size: 12.5px; line-height: 1.55; color: rgba(22,35,31,0.85); border-left: 2px solid var(--gold-soft); padding-left: 10px; }
+  .cite .ref { display: block; font-size: 11px; color: var(--pine); font-weight: 600; margin-bottom: 2px; }
+
+  .agreement-note {
+    margin-top: 10px; font-size: 12px; color: rgba(22,35,31,0.6); display: flex; gap: 6px; align-items: flex-start;
+  }
+  .agreement-note.disagreement { color: #8a5a12; }
+
+  .msg-actions { display: flex; gap: 12px; margin-top: 10px; padding-left: 2px; }
+  .msg-actions button {
+    display: flex; align-items: center; gap: 4px; background: none; border: none; cursor: pointer;
+    font-size: 11.5px; color: rgba(18,56,50,0.5); font-family: 'Inter', sans-serif; padding: 2px;
+  }
+  .msg-actions button:hover { color: var(--pine); }
+
+  /* Loading */
+  .loading-row { align-self: flex-start; display: flex; align-items: center; gap: 8px; color: rgba(18,56,50,0.6); font-size: 13.5px; padding: 2px 4px; }
+  .loading-row .star-8 { background: var(--gold); width: 11px; height: 11px; }
+  .chain-loader { display: flex; align-items: center; gap: 12px; padding: 4px; }
+  .chain-loader .pulses { display: flex; align-items: center; gap: 6px; }
+  .chain-loader .pulses .star-8 { background: var(--gold); width: 10px; height: 10px; animation: chain-pulse 1.4s ease-in-out infinite; }
+  .chain-loader .lbl { font-size: 14px; color: rgba(18,56,50,0.6); }
+  .chain-loader-slow { margin: 6px 0 0 50px; font-size: 12px; color: rgba(18,56,50,0.45); }
+  @keyframes chain-pulse {
+    0%, 70%, 100% { opacity: 0.25; transform: scale(0.85); }
+    35% { opacity: 1; transform: scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) { .chain-loader .pulses .star-8 { animation: none; opacity: 0.6; } }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; border-radius: 999px;
+    padding: 4px 10px; font-size: 11px; font-weight: 500; box-shadow: inset 0 0 0 1px rgba(184,137,47,0.3);
+    background: rgba(184,137,47,0.12); color: #7a5a12;
+  }
+  .chip.established { background: rgba(18,56,50,0.1); color: var(--pine-deep); box-shadow: inset 0 0 0 1px rgba(18,56,50,0.2); }
+  .chip.unverified { background: rgba(138,31,31,0.07); color: #7a1f1f; box-shadow: inset 0 0 0 1px rgba(138,31,31,0.2); }
+
+  /* Error */
+  .error-card {
+    border-radius: 16px; border: 1px solid rgba(153,27,27,0.2); background: #fbf1f1; color: #7a1f1f;
+    padding: 14px 18px; font-size: 13.5px; line-height: 1.5;
+  }
+  .error-card .err-title { font-weight: 600; margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
+  .error-card button.retry {
+    margin-top: 10px; font-size: 12px; font-weight: 600; color: #7a1f1f; background: transparent;
+    border: 1px solid rgba(153,27,27,0.3); border-radius: 999px; padding: 5px 12px; cursor: pointer;
+  }
+  .error-card button.retry:hover { background: rgba(153,27,27,0.06); }
+
+  /* Input bar */
+  .inputbar { border-top: 1px solid rgba(18,56,50,0.1); background: var(--parchment-soft); padding: 14px 20px; }
+  .inputbar form { max-width: 680px; margin: 0 auto; display: flex; align-items: flex-end; gap: 8px; }
+  .inputbar textarea {
+    flex: 1; resize: none; border-radius: 12px; border: 1px solid rgba(18,56,50,0.2); background: white;
+    padding: 10px 14px; font-size: 14.5px; font-family: 'Inter', sans-serif; max-height: 140px; outline: none;
+  }
+  .inputbar textarea:focus { box-shadow: 0 0 0 2px rgba(184,137,47,0.5); border-color: transparent; }
+  .inputbar button.send {
+    flex-shrink: 0; border-radius: 12px; background: var(--pine); color: var(--parchment-soft);
+    padding: 10px 16px; font-size: 14px; font-weight: 500; border: none; cursor: pointer;
+  }
+  .inputbar button.send:disabled { opacity: 0.4; cursor: not-allowed; }
+  .inputbar button.send:not(:disabled):hover { background: var(--pine-deep); }
+  .inputbar .disclaimer { max-width: 680px; margin: 8px auto 0; font-size: 10.5px; color: rgba(22,35,31,0.45); }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="harness">
+  <b>Isnad · UX states</b>
+  <button data-view="landing" class="active">Landing</button>
+  <button data-view="conversation">Conversation</button>
+  <button data-view="loading">Loading</button>
+  <button data-view="error">Error</button>
+</div>
+
+<div class="app">
+  <header class="appbar">
+    <div class="brand">
+      <span class="star-8 star-spin"></span>
+      <span class="name">Isnad</span>
+    </div>
+    <span class="tagline">Qur'an · Sunnah · Companions · Scholars</span>
+  </header>
+
+  <!-- LANDING -->
+  <section id="view-landing" class="landing">
+    <div class="chain">
+      <div class="link"><span class="star-8"></span><span class="label">Qur'an</span></div>
+      <span class="connector"></span>
+      <div class="link"><span class="star-8"></span><span class="label">Sunnah</span></div>
+      <span class="connector"></span>
+      <div class="link"><span class="star-8"></span><span class="label">Companions</span></div>
+      <span class="connector"></span>
+      <div class="link"><span class="star-8"></span><span class="label">Scholars</span></div>
+    </div>
+    <h1>Ask, and trace the answer to its source.</h1>
+    <p class="sub">
+      An <span class="font-arabic">isnād</span> is the chain of transmission behind a piece of
+      knowledge — who said it, and who they heard it from. Every answer here is built the same
+      way: Qur'an first, then authentic Sunnah, then how the Companions understood it, then
+      recognized scholarship. Disagreement is never hidden.
+    </p>
+    <div class="starters">
+      <button>What is the ruling on taking a mortgage to buy a home?</button>
+      <button>How do I calculate zakāh on savings and crypto?</button>
+      <button>What does the Qur'an say about honesty in trade?</button>
+      <button>Is freelance income from a gambling-adjacent platform halal?</button>
+    </div>
+  </section>
+
+  <!-- CONVERSATION -->
+  <section id="view-conversation" class="conversation hidden">
+    <div class="msg-user">
+      <div class="bubble">Is a mortgage halal if there's no alternative in my city?</div>
+    </div>
+
+    <div class="msg-assistant">
+      <div class="answer-card">
+        <div class="chips">
+          <span class="chip">Legitimate scholarly disagreement</span>
+          <span class="badge-finance" style="margin-bottom:0"><span class="star-8"></span>Muʿāmalāt (finance)</span>
+        </div>
+        <div class="answer-body">
+          <h3>Short answer</h3>
+          <p>A conventional interest-bearing mortgage falls under <em>ribā</em>, which is
+          explicitly prohibited. Most contemporary scholars hold this ruling firmly even where
+          Islamic financing isn't locally available, though a minority give limited concessions
+          for a first primary home under genuine necessity (<span class="font-arabic">ḍarūrah</span>).</p>
+          <h3>What the sources say</h3>
+          <p>The prohibition of <em>ribā</em> is stated directly and repeatedly, with no
+          exception carved out for housing. Early scholarship treated any fixed return on a loan
+          as the same category, regardless of the lender's identity or the purpose of the loan.</p>
+        </div>
+
+        <div class="source-chain">
+          <div class="sc-label">Traced through</div>
+          <div class="sc-tiers">
+            <details class="sc-tier" open>
+              <summary><span class="star-8"></span><span class="tier-name">Qur'an</span><span class="chevron">▸</span></summary>
+              <div class="tier-body">
+                <div class="cite"><span class="ref">Al-Baqarah 2:275</span>Allah permitted trade and forbade ribā — the distinction is drawn directly, with no exception for housing.</div>
+                <div class="cite"><span class="ref">Al-Baqarah 2:278–279</span>Believers are commanded to give up what remains of ribā.</div>
+              </div>
+            </details>
+            <details class="sc-tier">
+              <summary><span class="star-8"></span><span class="tier-name">Sunnah</span><span class="chevron">▸</span></summary>
+              <div class="tier-body">
+                <div class="cite"><span class="ref">Ṣaḥīḥ Muslim 1598</span>The Prophet ﷺ cursed the one who consumes ribā, the one who pays it, the scribe, and the two witnesses — saying they are equal. <em>Authentic.</em></div>
+              </div>
+            </details>
+            <details class="sc-tier">
+              <summary><span class="star-8"></span><span class="tier-name">Companions</span><span class="chevron">▸</span></summary>
+              <div class="tier-body">
+                <div class="cite"><span class="ref">Ibn ʿAbbās</span>Held that every loan which draws a benefit is ribā — applied to any fixed return regardless of lender or purpose.</div>
+              </div>
+            </details>
+            <details class="sc-tier">
+              <summary><span class="star-8"></span><span class="tier-name">Scholars</span><span class="chevron">▸</span></summary>
+              <div class="tier-body">
+                <div class="cite"><span class="ref">Majority contemporary view</span>OIC Fiqh Academy and most councils treat interest-based mortgages as impermissible, directing toward murābaḥah or ijārah.</div>
+                <div class="cite"><span class="ref">Minority concession</span>Permitted strictly for a first primary residence under genuine ḍarūrah — a last resort, not a general allowance.</div>
+              </div>
+            </details>
+          </div>
+          <p class="agreement-note">The prohibition of ribā itself is clear and established; what scholars differ on is whether necessity applies to housing.</p>
+        </div>
+      </div>
+      <div class="msg-actions">
+        <button>Copy</button>
+      </div>
+    </div>
+
+    <div class="msg-user">
+      <div class="bubble">What if I genuinely have no other option?</div>
+    </div>
+
+    <div class="chain-loader">
+      <span class="pulses">
+        <span class="star-8" style="animation-delay:0s"></span><span class="star-8" style="animation-delay:.35s"></span><span class="star-8" style="animation-delay:.7s"></span><span class="star-8" style="animation-delay:1.05s"></span>
+      </span>
+      <span class="lbl">Tracing the chain…</span>
+    </div>
+  </section>
+
+  <!-- LOADING (standalone) -->
+  <section id="view-loading" class="conversation hidden">
+    <div class="msg-user">
+      <div class="bubble">How do I calculate zakāh on savings and crypto?</div>
+    </div>
+    <div>
+      <div class="chain-loader">
+        <span class="pulses">
+          <span class="star-8" style="animation-delay:0s"></span><span class="star-8" style="animation-delay:.35s"></span><span class="star-8" style="animation-delay:.7s"></span><span class="star-8" style="animation-delay:1.05s"></span>
+        </span>
+        <span class="lbl">Tracing the chain…</span>
+      </div>
+      <p class="chain-loader-slow">Still working — detailed questions take a little longer.</p>
+    </div>
+  </section>
+
+  <!-- ERROR (standalone) -->
+  <section id="view-error" class="conversation hidden">
+    <div class="msg-user">
+      <div class="bubble">Is freelance income from a gambling-adjacent platform halal?</div>
+    </div>
+    <div class="error-card">
+      <div class="err-title">⚠ Couldn't reach the server</div>
+      Check your connection and try again. Your question hasn't been lost — it's still in the box below.
+      <div><button class="retry">Try again</button></div>
+    </div>
+  </section>
+
+  <!-- Input bar always visible -->
+  <div class="inputbar">
+    <form onsubmit="return false;">
+      <textarea rows="1" placeholder="Ask a question of Islamic knowledge…"></textarea>
+      <button class="send" type="submit">Ask</button>
+    </form>
+    <p class="disclaimer">Educational guidance, not a binding fatwa. For divorce, inheritance, or other high-stakes rulings, consult a qualified local scholar.</p>
+  </div>
+</div>
+
+<script>
+  const views = ['landing', 'conversation', 'loading', 'error'];
+  document.querySelectorAll('.harness button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.harness button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const target = btn.dataset.view;
+      views.forEach(v => {
+        document.getElementById('view-' + v).classList.toggle('hidden', v !== target);
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

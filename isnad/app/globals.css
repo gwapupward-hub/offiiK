@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=Noto+Naskh+Arabic:wght@500;600&display=swap');
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+:root {
+  --ink: #16231f;
+  --pine: #123832;
+  --pine-deep: #0c2622;
+  --gold: #b8892f;
+  --gold-soft: #d9b86a;
+  --parchment: #efe7d8;
+  --parchment-soft: #f6f1e6;
+}
+
+body {
+  background: var(--parchment);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+}
+
+.font-display {
+  font-family: 'Fraunces', serif;
+}
+
+.font-arabic {
+  font-family: 'Noto Naskh Arabic', serif;
+}
+
+.star-8 {
+  clip-path: polygon(
+    50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%,
+    21% 91%, 32% 57%, 2% 35%, 39% 35%
+  );
+}
+
+@keyframes drift {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.star-spin {
+  animation: drift 6s linear infinite;
+}
+
+/* Loader: a pulse travelling along the four links of the chain. */
+@keyframes chain-pulse {
+  0%, 70%, 100% { opacity: 0.25; transform: scale(0.85); }
+  35% { opacity: 1; transform: scale(1); }
+}
+
+.chain-pulse {
+  animation: chain-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star-spin { animation: none; }
+  .chain-pulse { animation: none; opacity: 0.6; }
+}
