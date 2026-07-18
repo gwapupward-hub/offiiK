@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildSystemPrompt, isFinanceQuestion } from "@/lib/knowledge";
+import { validateTelegramInitData } from "@/lib/telegramAuth";
 import {
   generateAnswer,
   providerKeyMissing,
@@ -12,6 +13,27 @@ export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
+    // Requests from the Telegram Mini App (/telegram) carry the signed initData
+    // string. When present, prove it came from Telegram before doing any work;
+    // ordinary web requests without the header are unaffected.
+    const initData = req.headers.get("x-telegram-init-data");
+    if (initData) {
+      const botToken = process.env.TELEGRAM_BOT_TOKEN;
+      if (!botToken) {
+        return NextResponse.json(
+          { error: "Server is missing TELEGRAM_BOT_TOKEN. Add it to validate Telegram requests." },
+          { status: 500 }
+        );
+      }
+      const { valid } = validateTelegramInitData(initData, botToken);
+      if (!valid) {
+        return NextResponse.json(
+          { error: "Telegram authentication failed." },
+          { status: 401 }
+        );
+      }
+    }
+
     const body = (await req.json()) as {
       messages: ChatMessage[];
       provider?: string;

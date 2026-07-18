@@ -58,9 +58,38 @@ Add your keys as environment variables in your Vercel project settings
 
 - `ANTHROPIC_API_KEY` — required for the Claude toggle (the default).
 - `OPENAI_API_KEY` — required only for the OpenAI toggle.
+- `TELEGRAM_BOT_TOKEN` — required only for the Telegram Mini App (see below).
 
 They're read at runtime, not build time, so a missing key won't fail the build —
 it'll only fail requests that need it. Redeploy after adding or changing env vars.
+
+## Telegram Mini App
+
+The app ships a Telegram Mini App at the **`/telegram`** route. It's the same
+chat experience as the web app (same `/api/chat` route, same answer/source-chain
+UI), wrapped in a Telegram-native shell: it boots the Telegram Web App SDK,
+mirrors the user's Telegram light/dark theme, and uses Telegram's native
+**MainButton** as the primary "Ask" action.
+
+Requests from the Mini App carry Telegram's signed `initData` in an
+`X-Telegram-Init-Data` header. The chat API validates it server-side with
+`lib/telegramAuth.ts` (HMAC-SHA256 per Telegram's documented scheme, plus an
+`auth_date` freshness check) using `TELEGRAM_BOT_TOKEN`, and rejects requests
+that fail validation with a 401. Ordinary web requests (no header) are
+unaffected.
+
+### Setup
+
+1. Create a bot with [@BotFather](https://t.me/BotFather) via `/newbot`, and copy
+   the bot token it gives you.
+2. In BotFather, run `/newapp`, choose your bot, and register the Mini App URL as
+   `https://<your-vercel-domain>/telegram`.
+3. Set `TELEGRAM_BOT_TOKEN` (the token from step 1) as an environment variable in
+   your Vercel project settings — the same place `ANTHROPIC_API_KEY` is set. It's
+   read at runtime, so redeploy (or push) after adding it.
+
+Once set, opening the Mini App from Telegram will hit `/telegram`, and every
+question is verified against your bot token before it's answered.
 
 ## Editing the knowledge base
 
