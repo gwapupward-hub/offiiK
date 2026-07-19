@@ -1,9 +1,5 @@
 import { buildSystemPrompt } from "@/lib/knowledge";
-import {
-  generateAnswer,
-  providerKeyMissing,
-  resolveProvider,
-} from "@/lib/providers";
+import { generateAnswer, openAiKeyMissing } from "@/lib/providers";
 
 /**
  * Shared logic for the Telegram *bot* (chat commands), as opposed to the
@@ -121,17 +117,16 @@ export async function sendTyping(token: string, chatId: number): Promise<void> {
 }
 
 /**
- * Answers a free-text question with the same provider + knowledge base the web
- * app and Mini App use. Single-turn (no cross-message memory) to keep the bot
- * stateless. Returns a user-facing error string if the provider key is missing.
+ * Answers a free-text question with the same OpenAI model + knowledge base the
+ * web app and Mini App use. Single-turn (no cross-message memory) to keep the
+ * bot stateless. Returns a user-facing error string if the OpenAI key is missing.
  */
 export async function answerQuestion(question: string): Promise<string> {
-  const provider = resolveProvider(undefined); // Claude by default
-  const keyError = providerKeyMissing(provider);
+  const keyError = openAiKeyMissing();
   if (keyError) return keyError;
 
   const systemPrompt = buildSystemPrompt(question);
-  const answer = await generateAnswer(provider, systemPrompt, [
+  const answer = await generateAnswer(systemPrompt, [
     { role: "user", content: question },
   ]);
   return answer.trim() || "I couldn't produce an answer for that. Please try rephrasing.";

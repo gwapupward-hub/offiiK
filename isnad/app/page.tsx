@@ -19,14 +19,11 @@ const STARTERS = [
   "Is freelance income from a gambling-adjacent platform halal?",
 ];
 
-type Provider = "anthropic" | "openai";
-
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [lastFailed, setLastFailed] = useState<string | null>(null);
-  const [provider, setProvider] = useState<Provider>("anthropic");
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -56,7 +53,6 @@ export default function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             messages: nextMessages.map(({ role, content }) => ({ role, content })),
-            provider,
           }),
         });
         const data = await res.json();
@@ -91,7 +87,7 @@ export default function Home() {
         setLoading(false);
       }
     },
-    [provider]
+    []
   );
 
   function send(question: string) {
@@ -202,31 +198,6 @@ export default function Home() {
       )}
 
       <div className="border-t border-[var(--pine)]/10 bg-[var(--parchment-soft)] px-5 py-4 sm:px-8">
-        <div className="mx-auto mb-2.5 flex max-w-2xl items-center gap-2">
-          <span className="text-[11px] text-[var(--ink)]/45">Model</span>
-          <div
-            role="radiogroup"
-            aria-label="Answer model"
-            className="inline-flex rounded-full border border-[var(--pine)]/20 p-0.5"
-          >
-            {(["anthropic", "openai"] as const).map((p) => (
-              <button
-                key={p}
-                type="button"
-                role="radio"
-                aria-checked={provider === p}
-                onClick={() => setProvider(p)}
-                className={`rounded-full px-3 py-1 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)] ${
-                  provider === p
-                    ? "bg-[var(--pine)] text-[var(--parchment-soft)]"
-                    : "text-[var(--pine)] hover:bg-[var(--pine)]/5"
-                }`}
-              >
-                {p === "anthropic" ? "Claude" : "OpenAI"}
-              </button>
-            ))}
-          </div>
-        </div>
         <form
           onSubmit={(e) => {
             e.preventDefault();

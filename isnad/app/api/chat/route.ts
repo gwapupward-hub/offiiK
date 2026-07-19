@@ -3,8 +3,7 @@ import { buildSystemPrompt, isFinanceQuestion } from "@/lib/knowledge";
 import { validateTelegramInitData } from "@/lib/telegramAuth";
 import {
   generateAnswer,
-  providerKeyMissing,
-  resolveProvider,
+  openAiKeyMissing,
   type ChatMessage,
 } from "@/lib/providers";
 
@@ -36,7 +35,6 @@ export async function POST(req: NextRequest) {
 
     const body = (await req.json()) as {
       messages: ChatMessage[];
-      provider?: string;
     };
     const { messages } = body;
 
@@ -44,9 +42,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No messages provided." }, { status: 400 });
     }
 
-    const provider = resolveProvider(body.provider);
-
-    const keyError = providerKeyMissing(provider);
+    const keyError = openAiKeyMissing();
     if (keyError) {
       return NextResponse.json({ error: keyError }, { status: 500 });
     }
@@ -55,9 +51,9 @@ export async function POST(req: NextRequest) {
     const systemPrompt = buildSystemPrompt(lastUserMessage?.content ?? "");
     const routedToFinance = isFinanceQuestion(lastUserMessage?.content ?? "");
 
-    const answer = await generateAnswer(provider, systemPrompt, messages);
+    const answer = await generateAnswer(systemPrompt, messages);
 
-    return NextResponse.json({ answer, routedToFinance, provider });
+    return NextResponse.json({ answer, routedToFinance });
   } catch (err) {
     console.error("Chat route error:", err);
     return NextResponse.json(
