@@ -10,7 +10,6 @@
     "telegram:setup": "node scripts/telegram-setup.mjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.111.0",
     "@tailwindcss/typography": "^0.5.20",
     "@twa-dev/sdk": "^8.0.2",
     "next": "16.2.10",
