@@ -91,6 +91,39 @@ unaffected.
 Once set, opening the Mini App from Telegram will hit `/telegram`, and every
 question is verified against your bot token before it's answered.
 
+### Bot commands (chatting with @the_isnad_bot directly)
+
+Besides the Mini App, the bot answers questions **in a normal Telegram chat**.
+Send it any question and it replies using the same knowledge base; it also
+supports slash commands:
+
+- `/start` — welcome message and how to ask.
+- `/help` — how to use the bot.
+- `/about` — what Isnad is and how it builds an answer.
+- `/ask <question>` — ask explicitly (plain messages work too).
+
+This is handled by the `app/api/telegram/webhook` route, which Telegram calls
+for each incoming message. Answers are single-turn (no cross-message memory) and
+carry the same educational-guidance disclaimer as the web app.
+
+**Register the commands and webhook** with the setup script (idempotent — re-run
+it whenever commands, the domain, or the secret change):
+
+```bash
+TELEGRAM_BOT_TOKEN=<your-bot-token> \
+TELEGRAM_WEBHOOK_SECRET=<any-hard-to-guess-string> \
+npm run telegram:setup -- https://<your-vercel-domain>
+```
+
+The script calls `setMyCommands` (the command menu), `setWebhook` (points the
+bot at `/api/telegram/webhook`, with a `secret_token`), and `setChatMenuButton`
+(the bot's menu button opens the Mini App). Set the **same**
+`TELEGRAM_WEBHOOK_SECRET` in your Vercel environment as you pass to the script —
+the webhook route verifies Telegram's `X-Telegram-Bot-Api-Secret-Token` header
+against it and rejects anything that doesn't match, so nobody else can drive the
+bot. `TELEGRAM_BOT_TOKEN` must be set in the app environment too (for both the
+Mini App and the bot to work).
+
 ## Editing the knowledge base
 
 Update `knowledge/core.md` or `knowledge/muamalat.md` directly — no code changes
