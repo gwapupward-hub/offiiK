@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   description:
     "An Islamic knowledge assistant that answers from the Qur'an, authentic Sunnah, and the understanding of the Companions and early scholars — with sources shown, and disagreement never hidden.",
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
   },
 };
 
