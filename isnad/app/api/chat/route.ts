@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildSystemPrompt, isFinanceQuestion } from "@/lib/knowledge";
+import {
+  buildSystemPrompt,
+  isFinanceQuestion,
+  isTafsirQuestion,
+} from "@/lib/knowledge";
 import { validateTelegramInitData } from "@/lib/telegramAuth";
 import {
   generateAnswer,
@@ -50,10 +54,11 @@ export async function POST(req: NextRequest) {
     const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
     const systemPrompt = buildSystemPrompt(lastUserMessage?.content ?? "");
     const routedToFinance = isFinanceQuestion(lastUserMessage?.content ?? "");
+    const routedToTafsir = isTafsirQuestion(lastUserMessage?.content ?? "");
 
     const answer = await generateAnswer(systemPrompt, messages);
 
-    return NextResponse.json({ answer, routedToFinance });
+    return NextResponse.json({ answer, routedToFinance, routedToTafsir });
   } catch (err) {
     console.error("Chat route error:", err);
     return NextResponse.json(

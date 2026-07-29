@@ -9,6 +9,7 @@ type Message = {
   role: "user" | "assistant";
   content: string;
   routedToFinance?: boolean;
+  routedToTafsir?: boolean;
   error?: boolean;
 };
 
@@ -78,7 +79,12 @@ export default function TelegramPage() {
       } else {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: data.answer, routedToFinance: data.routedToFinance },
+          {
+            role: "assistant",
+            content: data.answer,
+            routedToFinance: data.routedToFinance,
+            routedToTafsir: data.routedToTafsir,
+          },
         ]);
       }
     } catch {
@@ -258,7 +264,11 @@ export default function TelegramPage() {
                       <p className="font-semibold">{m.content}</p>
                     </div>
                   ) : (
-                    <AnswerMessage content={m.content} routedToFinance={m.routedToFinance} />
+                    <AnswerMessage
+                      content={m.content}
+                      routedToFinance={m.routedToFinance}
+                      routedToTafsir={m.routedToTafsir}
+                    />
                   )}
                 </div>
               )

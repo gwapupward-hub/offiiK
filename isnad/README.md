@@ -1,18 +1,21 @@
 # Isnad — Islamic Knowledge Assistant
 
 A Next.js chat app that answers Islamic-knowledge questions using OpenAI, grounded
-by two uploaded skill files as system prompts:
+by a core skill and routed specialist add-ons:
 
 - `knowledge/core.md` — Islamic Teacher Core (Qur'an → Sunnah → Companions → Scholars)
 - `knowledge/muamalat.md` — Muʿāmalāt Expert add-on (Islamic finance), auto-routed
   in for finance-related questions per its own `integration.md` rules, layered on
   top of the Core with "core authority > add-on" as the conflict rule.
+- `knowledge/tafsir.md` — Tafsīr Expert add-on, auto-routed for sūrah studies,
+  āyah commentary, Qur'anic vocabulary, occasions of revelation, qirāʾāt,
+  classical tafsīr comparisons, and numbered Qur'an references.
 
 ## How it works
 
 - `lib/knowledge.ts` builds the system prompt at request time: always loads the
-  Core, and loads the finance add-on only when the question matches finance
-  keywords (ribā, zakāh, crypto, mortgage, business, inheritance, etc.).
+  Core, then independently routes finance and Tafsīr add-ons. Cross-domain
+  questions can load both specialists while the Core remains authoritative.
 - `app/api/chat/route.ts` is a server-side API route that calls the OpenAI API
   with that system prompt. Your API key never reaches the browser.
 - `lib/providers.ts` sends the system prompt to OpenAI and returns the answer.
@@ -118,11 +121,11 @@ Mini App and the bot to work).
 
 ## Editing the knowledge base
 
-Update `knowledge/core.md` or `knowledge/muamalat.md` directly — no code changes
-needed, they're read fresh from disk on each server start. To add another skill
-(e.g. a Seerah or Fiqh-of-Worship add-on), drop a new `.md` file in `knowledge/`,
-read it in `lib/knowledge.ts`, and add routing keywords the same way the finance
-add-on is routed.
+Update `knowledge/core.md`, `knowledge/muamalat.md`, or `knowledge/tafsir.md`
+directly — no code changes are needed for content-only edits; they are read from
+disk when the server starts. To add another skill (for example, Sīrah or
+Fiqh-of-Worship), add a `.md` file in `knowledge/`, read it in
+`lib/knowledge.ts`, and give it a focused routing predicate.
 
 ## Notes
 
@@ -160,11 +163,10 @@ the source of truth; the reference is kept in sync by hand.
 
 ## Knowledge source specs
 
-`docs/knowledge-sources/` holds the full original skill specs (Islamic Teacher
-Core and the Muʿāmalāt Expert add-on, with its manifest, integration rules,
-sourcing policy, and red-team evaluation questions) that `knowledge/core.md`
-and `knowledge/muamalat.md` were derived from. Kept for provenance and future
-edits — not read at runtime.
+`docs/knowledge-sources/` holds the original skill specs for the Islamic Teacher
+Core, Muʿāmalāt Expert, and Tafsīr Expert, together with their manifests and
+integration material. These files preserve provenance and support future edits;
+the app does not read them at runtime.
 
 ## License
 

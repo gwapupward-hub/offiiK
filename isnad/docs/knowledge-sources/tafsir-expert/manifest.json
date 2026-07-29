@@ -1,0 +1,24 @@
+{
+  "name": "tafsir_expert",
+  "display_name": "Tafsīr Expert",
+  "version": "1.0.0",
+  "type": "addon_skill",
+  "depends_on": [
+    "islamic_teacher_core",
+    "islamic_research_assistant"
+  ],
+  "description": "Qur'anic explanation add-on covering surah studies, ayah commentary, vocabulary, revelation context, cross-references, classical tafsir comparison, legal lessons, and clearly labeled reflection.",
+  "entrypoint": "skill.md",
+  "shared_files": [
+    "integration.md"
+  ],
+  "tags": [
+    "tafsir",
+    "quran",
+    "surah-study",
+    "ayah-commentary",
+    "asbab-al-nuzul",
+    "qiraat",
+    "arabic-analysis"
+  ]
+}

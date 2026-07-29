@@ -13,6 +13,9 @@ the app itself does **not** read from this folder at runtime.
   rules), and `evaluation.md` (a red-team test suite for the add-on). The
   app's runtime version is `../../knowledge/muamalat.md`, which combines
   `skill.md` + `source-policy.md` + `integration.md`.
+- `tafsir-expert/` — the full Tafsīr Expert add-on with its manifest and
+  integration rules. The app's runtime version is
+  `../../knowledge/tafsir.md`.
 
 If you want to change how the assistant answers, edit the runtime files in
 `/knowledge` directly (see the root `README.md`). Update these source files

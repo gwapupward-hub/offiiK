@@ -9,6 +9,7 @@ function readKnowledge(file: string): string {
 
 const CORE_SKILL = readKnowledge("core.md");
 const MUAMALAT_SKILL = readKnowledge("muamalat.md");
+const TAFSIR_SKILL = readKnowledge("tafsir.md");
 
 // Keywords that route a question into the finance (Muʿāmalāt) add-on,
 // per that plugin's own integration.md routing rules.
@@ -27,31 +28,68 @@ export function isFinanceQuestion(question: string): boolean {
   return FINANCE_KEYWORDS.some((kw) => q.includes(kw));
 }
 
+// Terms that indicate the user is asking for Qur'anic explanation rather than
+// only mentioning Islam generally. Numbered references (for example, 2:255)
+// are included because they are a common way to request an āyah directly.
+const TAFSIR_KEYWORDS = [
+  "quran", "qur'an", "qur’an", "koran", "tafsir", "tafsīr",
+  "surah", "sura", "sūrah", "ayah", "ayat", "āyah", "āyāt",
+  "asbab al-nuzul", "asbāb al-nuzūl", "occasion of revelation",
+  "reason for revelation", "makki", "makkan", "madani", "madinan",
+  "qiraat", "qirāʾāt", "recitation variant", "abrogated verse",
+  "nasikh", "mansukh", "nāsikh", "mansūkh", "ibn kathir", "ibn kathīr",
+  "al-tabari", "al-ṭabarī", "al-qurtubi", "al-qurṭubī",
+  "explain this verse", "meaning of this verse", "quranic word",
+  "qur'anic word", "qur’anic word", "قرآن", "تفسير", "سورة", "آية",
+];
+
+const QURAN_REFERENCE = /\b(?:[1-9]|[1-9]\d|1(?:0\d|1[0-4])):\d{1,3}\b/;
+
+export function isTafsirQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return TAFSIR_KEYWORDS.some((kw) => q.includes(kw)) || QURAN_REFERENCE.test(q);
+}
+
 /**
  * Builds the system prompt following the load order defined in the
- * Muʿāmalāt Expert plugin's integration.md:
+ * add-on integration rules:
  *   1. Load core skill.
- *   2. Load add-on skill (only when relevant).
+ *   2. Load each relevant add-on skill.
  *   3. Core authority overrides the add-on wherever they conflict.
  */
 export function buildSystemPrompt(question: string): string {
   const routeToFinance = isFinanceQuestion(question);
+  const routeToTafsir = isTafsirQuestion(question);
 
   const parts = [
     "# LOADED SKILL: Islamic Teacher Core (authoritative — see load order below)",
     CORE_SKILL,
   ];
 
+  if (routeToTafsir) {
+    parts.push(
+      "\n\n# LOADED SKILL: Tafsīr Expert (Qur'an add-on — depends on Core above)",
+      TAFSIR_SKILL
+    );
+  }
+
   if (routeToFinance) {
     parts.push(
       "\n\n# LOADED SKILL: Muʿāmalāt Expert (finance add-on — depends on Core above)",
-      MUAMALAT_SKILL,
+      MUAMALAT_SKILL
+    );
+  }
+
+  if (routeToTafsir || routeToFinance) {
+    parts.push(
       "\n\n# LOAD ORDER AND CONFLICT RULE\n" +
         "core authority > shared policy > add-on specialization\n" +
-        "The add-on may add finance-specific detail but must never weaken the Core's " +
+        "Each add-on may add domain-specific detail but must never weaken the Core's " +
         "verification standards, hadith authentication rules, or safety/referral rules. " +
-        "Apply the Core's Answer Format and confidence labels unless the add-on's more " +
-        "detailed finance-specific Answer Format is a better fit for this question."
+        "When multiple add-ons are loaded, combine their relevant analysis without letting " +
+        "either add-on override the Core or the other add-on outside its specialty. " +
+        "Apply the Core's Answer Format and confidence labels unless a loaded add-on's more " +
+        "specific Answer Format is a better fit for the question."
     );
   }
 
