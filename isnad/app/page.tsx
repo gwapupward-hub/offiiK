@@ -9,6 +9,7 @@ type Message = {
   role: "user" | "assistant";
   content: string;
   routedToFinance?: boolean;
+  routedToTafsir?: boolean;
   error?: boolean;
 };
 
@@ -70,7 +71,12 @@ export default function Home() {
         } else {
           setMessages((prev) => [
             ...prev,
-            { role: "assistant", content: data.answer, routedToFinance: data.routedToFinance },
+            {
+              role: "assistant",
+              content: data.answer,
+              routedToFinance: data.routedToFinance,
+              routedToTafsir: data.routedToTafsir,
+            },
           ]);
         }
       } catch {
@@ -186,7 +192,11 @@ export default function Home() {
                       )}
                     </div>
                   ) : (
-                    <AnswerMessage content={m.content} routedToFinance={m.routedToFinance} />
+                    <AnswerMessage
+                      content={m.content}
+                      routedToFinance={m.routedToFinance}
+                      routedToTafsir={m.routedToTafsir}
+                    />
                   )}
                 </div>
               )
