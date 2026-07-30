@@ -63,6 +63,9 @@ export const ABOUT_TEXT =
   "Creed questions additionally use the ʿAqīdah Expert for tawḥīd, īmān, " +
   "Allah's names and attributes, qadar, the unseen, doubts, and theological " +
   "disagreement—with strict safeguards against reckless takfīr.\n\n" +
+  "Arabic-language questions additionally use the Arabic Language Expert for " +
+  "translation, grammar, morphology, meaning, rhetoric, and dialect—without " +
+  "turning linguistic possibility into a religious ruling.\n\n" +
   "Finance questions (ribā, zakāh, crypto, mortgages, trade…) additionally " +
   "draw on a Muʿāmalāt add-on.\n\n" +
   DISCLAIMER;

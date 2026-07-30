@@ -34,6 +34,11 @@ the app itself does **not** read from this folder at runtime.
   theological disagreement, takfīr boundaries, response standards, and
   evaluation references. The app's bundled runtime version is
   `../../knowledge/aqidah.md`.
+- `arabic-language-expert/` — the full Arabic Language Expert add-on with
+  grammar, morphology, semantics, lexicography, Qur'anic rhetoric, translation,
+  text analysis, modern registers, dialects, teaching, response standards, and
+  evaluation references. The app's bundled runtime version is
+  `../../knowledge/arabic.md`.
 
 If you want to change how the assistant answers, edit the runtime files in
 `/knowledge` directly (see the root `README.md`). Update these source files

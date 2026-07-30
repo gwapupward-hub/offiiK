@@ -14,6 +14,7 @@ const HADITH_SKILL = readKnowledge("hadith.md");
 const FIQH_SKILL = readKnowledge("fiqh.md");
 const SEERAH_SKILL = readKnowledge("seerah.md");
 const AQIDAH_SKILL = readKnowledge("aqidah.md");
+const ARABIC_SKILL = readKnowledge("arabic.md");
 
 // Keywords that route a question into the finance (Muʿāmalāt) add-on,
 // per that plugin's own integration.md routing rules.
@@ -44,7 +45,8 @@ const TAFSIR_KEYWORDS = [
   "nasikh", "mansukh", "nāsikh", "mansūkh", "ibn kathir", "ibn kathīr",
   "al-tabari", "al-ṭabarī", "al-qurtubi", "al-qurṭubī",
   "explain this verse", "meaning of this verse", "quranic word",
-  "qur'anic word", "qur’anic word", "قرآن", "تفسير", "سورة", "آية",
+  "qur'anic word", "qur’anic word", "grammar of this verse",
+  "grammar of this ayah", "wording of this verse", "قرآن", "تفسير", "سورة", "آية",
 ];
 
 const QURAN_REFERENCE = /\b(?:[1-9]|[1-9]\d|1(?:0\d|1[0-4])):\d{1,3}\b/;
@@ -183,6 +185,54 @@ export function isAqidahQuestion(question: string): boolean {
   return AQIDAH_KEYWORDS.some((kw) => q.includes(kw));
 }
 
+// Arabic Language Expert owns linguistic analysis, not every question that
+// happens to contain an Arabic religious term. Route only focused requests
+// about wording, translation, grammar, morphology, rhetoric, text form,
+// register, dialect, or language-based interpretive claims.
+const ARABIC_KEYWORDS = [
+  "arabic language", "quranic arabic", "qur'anic arabic", "qur’anic arabic",
+  "classical arabic", "modern standard arabic", "msa arabic", "arabic grammar",
+  "arabic morphology", "arabic syntax", "arabic rhetoric", "arabic imperative",
+  "imperative in arabic", "arabic vocabulary",
+  "arabic word", "arabic phrase", "arabic sentence", "arabic text",
+  " in arabic", "from arabic",
+  "translate from arabic", "translate into arabic", "translate this arabic",
+  "translation of the arabic", "what does this mean in arabic",
+  "what does this arabic mean", "meaning in arabic", "literal arabic",
+  "i'rab", "iʿrāb", "iraab", "nahw", "naḥw", "sarf", "ṣarf",
+  "root letters", "triliteral root", "arabic root", "root fallacy",
+  "verb form", "form ii", "form iii", "form iv", "form v", "form vi",
+  "form vii", "form viii", "form ix", "form x", "case ending",
+  "accusative case", "nominative case", "genitive case", "jussive mood",
+  "subjunctive mood", "diacritize", "diacritization", "vocalize this",
+  "vocalization", "tashkeel", "tashkīl", "transliterate", "transliteration",
+  "balaghah", "balāghah", "arabic eloquence", "arabic lexicon",
+  "arabic dictionary", "semantic range", "arabic etymology",
+  "arabic pronunciation", "arabic spelling", "arabic calligraphy",
+  "arabic poetry", "arabic prose", "arabic learner", "learn arabic",
+  "teach me arabic", "correct my arabic", "is this correct arabic",
+  "arabic dialect", "egyptian arabic", "levantine arabic", "gulf arabic",
+  "khaleeji arabic", "maghrebi arabic", "iraqi arabic", "hijazi arabic",
+  "sudanese arabic", "yemeni arabic", "fusha", "fuṣḥā", "ammiyya", "ʿāmmiyyah",
+  "grammar of this verse", "grammar of this ayah", "wording of this verse",
+  "wording of this hadith", "arabic wording", "linguistic analysis",
+  "لغة عربية", "العربية الفصحى", "النحو", "الصرف", "الإعراب",
+  "إعراب", "بلاغة", "جذر الكلمة", "وزن الكلمة", "تشكيل", "ترجمة",
+  "ترجم", "ما معنى", "ماذا تعني", "لهجة", "فصحى", "عامية",
+];
+
+const ARABIC_SCRIPT = /[\u0600-\u06ff]/;
+const ARABIC_LANGUAGE_INTENT =
+  /\b(?:analy[sz]e|correct|define|diacritize|gloss|meaning|parse|pronounce|translate|transliterate|vocalize)\b/;
+
+export function isArabicQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return (
+    ARABIC_KEYWORDS.some((kw) => q.includes(kw)) ||
+    (ARABIC_SCRIPT.test(question) && ARABIC_LANGUAGE_INTENT.test(q))
+  );
+}
+
 /**
  * Builds the system prompt following the load order defined in the
  * add-on integration rules:
@@ -197,6 +247,7 @@ export function buildSystemPrompt(question: string): string {
   const routeToFiqh = isFiqhQuestion(question);
   const routeToSeerah = isSeerahQuestion(question);
   const routeToAqidah = isAqidahQuestion(question);
+  const routeToArabic = isArabicQuestion(question);
 
   const parts = [
     "# LOADED SKILL: Islamic Teacher Core (authoritative — see load order below)",
@@ -231,6 +282,13 @@ export function buildSystemPrompt(question: string): string {
     );
   }
 
+  if (routeToArabic) {
+    parts.push(
+      "\n\n# LOADED SKILL: Arabic Language Expert (linguistic analysis add-on — depends on Core and shared source policy)",
+      ARABIC_SKILL
+    );
+  }
+
   if (routeToFiqh) {
     parts.push(
       "\n\n# LOADED SKILL: Fiqh Expert (jurisprudence add-on — depends on Core and shared source policy)",
@@ -250,6 +308,7 @@ export function buildSystemPrompt(question: string): string {
     routeToTafsir ||
     routeToSeerah ||
     routeToAqidah ||
+    routeToArabic ||
     routeToFiqh ||
     routeToFinance
   ) {
@@ -258,6 +317,7 @@ export function buildSystemPrompt(question: string): string {
         "Islamic Teacher Core > shared source and hadith policy. " +
         "Seerah Expert owns historical reconstruction; Hadith Sciences owns report authentication; " +
         "Tafsīr Expert owns Qur'anic interpretation; ʿAqīdah Expert owns doctrinal explanation; " +
+        "Arabic Language Expert owns linguistic analysis while preserving material ambiguity; " +
         "Fiqh Expert owns legal derivation and worldly legal consequences; " +
         "Muʿāmalāt is the financial specialization beneath Fiqh Expert.\n" +
         "Each add-on may add domain-specific detail but must never weaken the Core's " +
