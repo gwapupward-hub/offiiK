@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   buildSystemPrompt,
+  isHadithQuestion,
   isFinanceQuestion,
   isTafsirQuestion,
 } from "@/lib/knowledge";
@@ -55,10 +56,16 @@ export async function POST(req: NextRequest) {
     const systemPrompt = buildSystemPrompt(lastUserMessage?.content ?? "");
     const routedToFinance = isFinanceQuestion(lastUserMessage?.content ?? "");
     const routedToTafsir = isTafsirQuestion(lastUserMessage?.content ?? "");
+    const routedToHadith = isHadithQuestion(lastUserMessage?.content ?? "");
 
     const answer = await generateAnswer(systemPrompt, messages);
 
-    return NextResponse.json({ answer, routedToFinance, routedToTafsir });
+    return NextResponse.json({
+      answer,
+      routedToFinance,
+      routedToTafsir,
+      routedToHadith,
+    });
   } catch (err) {
     console.error("Chat route error:", err);
     return NextResponse.json(
