@@ -1,0 +1,12 @@
+interface:
+  display_name: Seerah Expert
+  short_description: Evidence-based Prophetic biography and chronology
+  default_prompt: Use $seerah-expert to explain a Seerah event with verified sources,
+    chronology, and lessons.
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

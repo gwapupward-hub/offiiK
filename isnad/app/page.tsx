@@ -12,6 +12,7 @@ type Message = {
   routedToTafsir?: boolean;
   routedToHadith?: boolean;
   routedToFiqh?: boolean;
+  routedToSeerah?: boolean;
   error?: boolean;
 };
 
@@ -19,7 +20,7 @@ const STARTERS = [
   "I joined prayer as the imam rose from rukūʿ. Did the rakʿah count?",
   "How do I calculate zakāh on savings and crypto?",
   "How can I verify whether a hadith is authentic?",
-  "Is freelance income from a gambling-adjacent platform halal?",
+  "What is firmly established about the Hijrah and the cave?",
 ];
 
 export default function Home() {
@@ -80,6 +81,7 @@ export default function Home() {
               routedToTafsir: data.routedToTafsir,
               routedToHadith: data.routedToHadith,
               routedToFiqh: data.routedToFiqh,
+              routedToSeerah: data.routedToSeerah,
             },
           ]);
         }
@@ -202,6 +204,7 @@ export default function Home() {
                       routedToTafsir={m.routedToTafsir}
                       routedToHadith={m.routedToHadith}
                       routedToFiqh={m.routedToFiqh}
+                      routedToSeerah={m.routedToSeerah}
                     />
                   )}
                 </div>
