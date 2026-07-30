@@ -1,0 +1,36 @@
+{
+  "name": "seerah_expert",
+  "display_name": "Seerah Expert",
+  "version": "1.0.0",
+  "type": "addon_skill",
+  "depends_on": [
+    "islamic_teacher_core"
+  ],
+  "optional_dependencies": [
+    "tafsir_expert",
+    "hadith_sciences_expert",
+    "fiqh_expert"
+  ],
+  "description": "Evidence-graded Prophetic biography, chronology, relationships, campaigns, treaties, historical report criticism, and careful lessons from the Seerah.",
+  "entrypoint": "SKILL.md",
+  "shared_files": [
+    "integration.md",
+    "references/source-policy.md",
+    "references/report-criticism.md",
+    "references/chronology-and-context.md",
+    "references/life-periods.md",
+    "references/campaigns-and-treaties.md",
+    "references/response-standards.md",
+    "references/evaluation.md"
+  ],
+  "tags": [
+    "seerah",
+    "prophetic-biography",
+    "chronology",
+    "maghazi",
+    "history",
+    "campaigns",
+    "treaties",
+    "source-criticism"
+  ]
+}

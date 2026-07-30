@@ -25,6 +25,10 @@ the app itself does **not** read from this folder at runtime.
   and integrated Muʿāmalāt specialization. The app's shared runtime version is
   `../../knowledge/fiqh.md`; finance additionally loads
   `../../knowledge/muamalat.md`.
+- `seerah-expert/` — the full Seerah Expert add-on with source criticism,
+  chronology, life-period, campaign, treaty, response, and evaluation
+  references. The app's bundled runtime version is
+  `../../knowledge/seerah.md`.
 
 If you want to change how the assistant answers, edit the runtime files in
 `/knowledge` directly (see the root `README.md`). Update these source files

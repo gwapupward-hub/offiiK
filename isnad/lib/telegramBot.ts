@@ -57,6 +57,9 @@ export const ABOUT_TEXT =
   "answer is built the same way — Qur'an first, then authentic Sunnah, then " +
   "the Companions, then recognized scholarship — and legitimate scholarly " +
   "disagreement is surfaced, not buried.\n\n" +
+  "Seerah questions additionally use evidence-graded Prophetic biography, " +
+  "chronology, and early historical reports without treating every popular " +
+  "story as established.\n\n" +
   "Finance questions (ribā, zakāh, crypto, mortgages, trade…) additionally " +
   "draw on a Muʿāmalāt add-on.\n\n" +
   DISCLAIMER;

@@ -12,6 +12,7 @@ const MUAMALAT_SKILL = readKnowledge("muamalat.md");
 const TAFSIR_SKILL = readKnowledge("tafsir.md");
 const HADITH_SKILL = readKnowledge("hadith.md");
 const FIQH_SKILL = readKnowledge("fiqh.md");
+const SEERAH_SKILL = readKnowledge("seerah.md");
 
 // Keywords that route a question into the finance (Muʿāmalāt) add-on,
 // per that plugin's own integration.md routing rules.
@@ -106,6 +107,38 @@ export function isFiqhQuestion(question: string): boolean {
   return isFinanceQuestion(question) || FIQH_KEYWORDS.some((kw) => q.includes(kw));
 }
 
+// Seerah owns historical reconstruction of the Prophet's ﷺ life and mission.
+// Keep these triggers focused on biography, chronology, named events, campaigns,
+// treaties, and relationships so a generic mention of Islam does not load it.
+const SEERAH_KEYWORDS = [
+  "seerah", "sīrah", "sirah", "prophetic biography", "life of the prophet",
+  "life of prophet muhammad", "prophet muhammad's life", "prophet muhammad’s life",
+  "who was prophet muhammad", "tell me about prophet muhammad",
+  "prophet's childhood", "prophet’s childhood", "timeline of the prophet",
+  "birth of the prophet", "year of the elephant", "before prophethood",
+  "first revelation", "cave of hira", "ḥirā", "hira", "makkan period",
+  "meccan period", "madinan period", "medinan period", "early muslims",
+  "persecution in makkah", "migration to abyssinia", "hijrah", "hijra",
+  "cave of thawr", "spider and dove", "aqabah", "ʿaqabah", "pledge of aqabah",
+  "year of sorrow", "journey to taif", "journey to al-ta'if", "isra and mi'raj",
+  "isrāʾ and miʿrāj", "night journey and ascension", "boycott of banu hashim",
+  "constitution of madinah", "charter of madinah", "brotherhood in madinah",
+  "battle of badr", "battle of uhud", "battle of the trench", "battle of khandaq",
+  "battle of hunayn", "battle of mu'tah", "battle of mutah", "tabuk",
+  "hudaybiyyah", "hudaibiyah", "conquest of makkah", "farewell pilgrimage",
+  "farewell sermon", "final illness", "death of the prophet",
+  "wives of the prophet", "children of the prophet", "mothers of the believers",
+  "khadijah", "khadīja", "aisha", "ʿāʾishah", "aishah", "ahl al-bayt",
+  "letters to rulers", "delegations to the prophet", "maghazi", "maghāzī",
+  "ibn ishaq", "ibn isḥāq", "ibn hisham", "ibn hishām", "al-waqidi", "al-wāqidī",
+  "سيرة", "الهجرة", "بدر", "أحد", "الخندق", "الحديبية", "فتح مكة",
+];
+
+export function isSeerahQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return SEERAH_KEYWORDS.some((kw) => q.includes(kw));
+}
+
 /**
  * Builds the system prompt following the load order defined in the
  * add-on integration rules:
@@ -118,6 +151,7 @@ export function buildSystemPrompt(question: string): string {
   const routeToTafsir = isTafsirQuestion(question);
   const routeToHadith = isHadithQuestion(question);
   const routeToFiqh = isFiqhQuestion(question);
+  const routeToSeerah = isSeerahQuestion(question);
 
   const parts = [
     "# LOADED SKILL: Islamic Teacher Core (authoritative — see load order below)",
@@ -138,6 +172,13 @@ export function buildSystemPrompt(question: string): string {
     );
   }
 
+  if (routeToSeerah) {
+    parts.push(
+      "\n\n# LOADED SKILL: Seerah Expert (historical reconstruction add-on — depends on Core and shared source policy)",
+      SEERAH_SKILL
+    );
+  }
+
   if (routeToFiqh) {
     parts.push(
       "\n\n# LOADED SKILL: Fiqh Expert (jurisprudence add-on — depends on Core and shared source policy)",
@@ -152,10 +193,13 @@ export function buildSystemPrompt(question: string): string {
     );
   }
 
-  if (routeToHadith || routeToTafsir || routeToFiqh || routeToFinance) {
+  if (routeToHadith || routeToTafsir || routeToSeerah || routeToFiqh || routeToFinance) {
     parts.push(
       "\n\n# LOAD ORDER AND CONFLICT RULE\n" +
-        "Islamic Teacher Core > shared source and hadith policy > Fiqh Expert > Muʿāmalāt specialization\n" +
+        "Islamic Teacher Core > shared source and hadith policy. " +
+        "Seerah Expert owns historical reconstruction; Hadith Sciences owns report authentication; " +
+        "Tafsīr Expert owns Qur'anic interpretation; Fiqh Expert owns legal derivation; " +
+        "Muʿāmalāt is the financial specialization beneath Fiqh Expert.\n" +
         "Each add-on may add domain-specific detail but must never weaken the Core's " +
         "verification standards, hadith authentication rules, or safety/referral rules. " +
         "When multiple add-ons are loaded, combine their relevant analysis without letting " +
