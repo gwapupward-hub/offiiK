@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   buildSystemPrompt,
   isAqidahQuestion,
+  isArabicQuestion,
   isHadithQuestion,
   isFinanceQuestion,
   isFiqhQuestion,
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
     const routedToFiqh = isFiqhQuestion(lastUserMessage?.content ?? "");
     const routedToSeerah = isSeerahQuestion(lastUserMessage?.content ?? "");
     const routedToAqidah = isAqidahQuestion(lastUserMessage?.content ?? "");
+    const routedToArabic = isArabicQuestion(lastUserMessage?.content ?? "");
 
     const answer = await generateAnswer(systemPrompt, messages);
 
@@ -74,6 +76,7 @@ export async function POST(req: NextRequest) {
       routedToFiqh,
       routedToSeerah,
       routedToAqidah,
+      routedToArabic,
     });
   } catch (err) {
     console.error("Chat route error:", err);

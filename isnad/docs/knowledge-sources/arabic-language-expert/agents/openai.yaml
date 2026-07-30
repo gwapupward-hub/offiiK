@@ -1,0 +1,14 @@
+interface:
+  display_name: Arabic Language Expert
+  short_description: Analyze Classical and modern Arabic precisely
+  default_prompt: Use $arabic-language-expert to analyze this Arabic text, explain
+    its grammar and meaning, and provide a careful translation.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

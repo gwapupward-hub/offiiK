@@ -14,6 +14,7 @@ type Message = {
   routedToFiqh?: boolean;
   routedToSeerah?: boolean;
   routedToAqidah?: boolean;
+  routedToArabic?: boolean;
   error?: boolean;
 };
 
@@ -27,6 +28,7 @@ const STARTERS = [
   "How can I verify whether a hadith is authentic?",
   "What is firmly established about the Hijrah and the cave?",
   "How do qadar and human choice fit together?",
+  "Parse إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ and explain how its grammar shapes the translation.",
 ];
 
 /**
@@ -93,6 +95,7 @@ export default function TelegramPage() {
             routedToFiqh: data.routedToFiqh,
             routedToSeerah: data.routedToSeerah,
             routedToAqidah: data.routedToAqidah,
+            routedToArabic: data.routedToArabic,
           },
         ]);
       }
@@ -281,6 +284,7 @@ export default function TelegramPage() {
                       routedToFiqh={m.routedToFiqh}
                       routedToSeerah={m.routedToSeerah}
                       routedToAqidah={m.routedToAqidah}
+                      routedToArabic={m.routedToArabic}
                     />
                   )}
                 </div>
