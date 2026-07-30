@@ -15,6 +15,7 @@ const FIQH_SKILL = readKnowledge("fiqh.md");
 const SEERAH_SKILL = readKnowledge("seerah.md");
 const AQIDAH_SKILL = readKnowledge("aqidah.md");
 const ARABIC_SKILL = readKnowledge("arabic.md");
+const DAWAH_TARBIYAH_SKILL = readKnowledge("dawah.md");
 
 // Keywords that route a question into the finance (Muʿāmalāt) add-on,
 // per that plugin's own integration.md routing rules.
@@ -233,6 +234,45 @@ export function isArabicQuestion(question: string): boolean {
   );
 }
 
+// Daʿwah & Tarbiyah owns outreach strategy, teaching sequence, mentorship,
+// convert care, and community formation. Direct Islamic terms route on their
+// own; generic words such as "outreach" or "mentoring" require Islamic context
+// so business and software questions do not activate this specialist.
+const DAWAH_DIRECT_KEYWORDS = [
+  "dawah", "da'wah", "daʿwah", "da‘wah", "دعوة", "tarbiyah", "tarbiya",
+  "tarbiyyah", "تربية", "tabligh", "tablīgh", "calling to allah",
+  "call to islam", "calling to islam", "invite to islam", "invite someone to islam",
+  "explain islam to", "interested in islam", "prospective muslim", "new muslim",
+  "new-muslim", "convert care", "convert support", "recent convert",
+  "shahadah support", "shahāda support", "shahādah support",
+  "accept islam", "become muslim", "become a muslim", "took shahadah",
+  "took shahāda", "took shahādah", "halaqah", "ḥalaqah", "study circle",
+  "enjoin good", "enjoining good", "forbid evil", "forbidding evil",
+  "amr bil ma'ruf", "amr bil maʿruf", "nahi anil munkar", "nasihah",
+  "naṣīḥah", "public correction", "correct privately", "spiritual abuse",
+  "personality cult", "religious outreach", "islamic outreach",
+  "masjid program", "mosque program", "campus dawah", "prison dawah",
+  "online dawah", "youth halaqah", "new muslim program",
+  "new-muslim program", "convert mentorship", "muslim mentorship",
+  "islamic mentorship", "islamic curriculum", "teach islam", "teaching islam",
+  "build islamic community", "muslim community building", "islamic brotherhood",
+  "spiritual growth plan", "faith development plan", "islamic habit plan",
+  "debate a christian", "debate a muslim", "debate an atheist",
+];
+
+const DAWAH_ACTIVITY =
+  /\b(?:community building|convert|curriculum|debate|discipleship|halaqah|mentor(?:ing|ship)?|outreach|pastoral care|spiritual growth|study circle|teach(?:ing)?|youth program)\b/;
+const ISLAMIC_DAWAH_CONTEXT =
+  /\b(?:allah|atheist|christian|islam|islamic|masjid|mosque|muslim|prophet|qur['’]?an|religion|religious|shahadah|sunnah)\b/;
+
+export function isDawahTarbiyahQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return (
+    DAWAH_DIRECT_KEYWORDS.some((kw) => q.includes(kw)) ||
+    (DAWAH_ACTIVITY.test(q) && ISLAMIC_DAWAH_CONTEXT.test(q))
+  );
+}
+
 /**
  * Builds the system prompt following the load order defined in the
  * add-on integration rules:
@@ -248,6 +288,7 @@ export function buildSystemPrompt(question: string): string {
   const routeToSeerah = isSeerahQuestion(question);
   const routeToAqidah = isAqidahQuestion(question);
   const routeToArabic = isArabicQuestion(question);
+  const routeToDawahTarbiyah = isDawahTarbiyahQuestion(question);
 
   const parts = [
     "# LOADED SKILL: Islamic Teacher Core (authoritative — see load order below)",
@@ -289,6 +330,13 @@ export function buildSystemPrompt(question: string): string {
     );
   }
 
+  if (routeToDawahTarbiyah) {
+    parts.push(
+      "\n\n# LOADED SKILL: Daʿwah & Tarbiyah Expert (outreach and formation add-on — depends on Core and shared evidence policy)",
+      DAWAH_TARBIYAH_SKILL
+    );
+  }
+
   if (routeToFiqh) {
     parts.push(
       "\n\n# LOADED SKILL: Fiqh Expert (jurisprudence add-on — depends on Core and shared source policy)",
@@ -309,6 +357,7 @@ export function buildSystemPrompt(question: string): string {
     routeToSeerah ||
     routeToAqidah ||
     routeToArabic ||
+    routeToDawahTarbiyah ||
     routeToFiqh ||
     routeToFinance
   ) {
@@ -318,6 +367,8 @@ export function buildSystemPrompt(question: string): string {
         "Seerah Expert owns historical reconstruction; Hadith Sciences owns report authentication; " +
         "Tafsīr Expert owns Qur'anic interpretation; ʿAqīdah Expert owns doctrinal explanation; " +
         "Arabic Language Expert owns linguistic analysis while preserving material ambiguity; " +
+        "Daʿwah & Tarbiyah Expert owns outreach strategy, teaching sequence, mentorship, " +
+        "convert care, and community-development design; " +
         "Fiqh Expert owns legal derivation and worldly legal consequences; " +
         "Muʿāmalāt is the financial specialization beneath Fiqh Expert.\n" +
         "Each add-on may add domain-specific detail but must never weaken the Core's " +

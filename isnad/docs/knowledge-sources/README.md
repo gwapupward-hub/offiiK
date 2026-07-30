@@ -39,6 +39,11 @@ the app itself does **not** read from this folder at runtime.
   text analysis, modern registers, dialects, teaching, response standards, and
   evaluation references. The app's bundled runtime version is
   `../../knowledge/arabic.md`.
+- `dawah-tarbiyah-expert/` — the full Daʿwah & Tarbiyah Expert add-on with
+  wise invitation, convert care, spiritual formation, mentorship, audience and
+  pastoral care, community-program design, ethics, safeguarding, response
+  standards, and evaluation references. The app's bundled runtime version is
+  `../../knowledge/dawah.md`.
 
 If you want to change how the assistant answers, edit the runtime files in
 `/knowledge` directly (see the root `README.md`). Update these source files

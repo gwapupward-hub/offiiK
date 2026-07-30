@@ -16,6 +16,7 @@ export default function AnswerMessage({
   routedToSeerah,
   routedToAqidah,
   routedToArabic,
+  routedToDawahTarbiyah,
 }: {
   content: string;
   routedToFinance?: boolean;
@@ -25,6 +26,7 @@ export default function AnswerMessage({
   routedToSeerah?: boolean;
   routedToAqidah?: boolean;
   routedToArabic?: boolean;
+  routedToDawahTarbiyah?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const { lead, tiers, certainty, structured } = parseAnswer(content);
@@ -49,9 +51,16 @@ export default function AnswerMessage({
           routedToFiqh ||
           routedToSeerah ||
           routedToAqidah ||
-          routedToArabic) && (
+          routedToArabic ||
+          routedToDawahTarbiyah) && (
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {certainty && <CertaintyChip certainty={certainty} />}
+            {routedToDawahTarbiyah && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--pine)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--pine-deep)]">
+                <span className="star-8 inline-block h-2 w-2 bg-[var(--gold)]" aria-hidden="true" />
+                Daʿwah &amp; Tarbiyah
+              </span>
+            )}
             {routedToArabic && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)]/15 px-2.5 py-1 text-[11px] font-medium text-[var(--pine-deep)]">
                 <span className="star-8 inline-block h-2 w-2 bg-[var(--gold)]" aria-hidden="true" />

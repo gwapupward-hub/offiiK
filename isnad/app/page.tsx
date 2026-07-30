@@ -15,6 +15,7 @@ type Message = {
   routedToSeerah?: boolean;
   routedToAqidah?: boolean;
   routedToArabic?: boolean;
+  routedToDawahTarbiyah?: boolean;
   error?: boolean;
 };
 
@@ -25,6 +26,7 @@ const STARTERS = [
   "What is firmly established about the Hijrah and the cave?",
   "How do qadar and human choice fit together?",
   "Parse إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ and explain how its grammar shapes the translation.",
+  "Design a wise first-month support plan for a new Muslim.",
 ];
 
 export default function Home() {
@@ -88,6 +90,7 @@ export default function Home() {
               routedToSeerah: data.routedToSeerah,
               routedToAqidah: data.routedToAqidah,
               routedToArabic: data.routedToArabic,
+              routedToDawahTarbiyah: data.routedToDawahTarbiyah,
             },
           ]);
         }
@@ -213,6 +216,7 @@ export default function Home() {
                       routedToSeerah={m.routedToSeerah}
                       routedToAqidah={m.routedToAqidah}
                       routedToArabic={m.routedToArabic}
+                      routedToDawahTarbiyah={m.routedToDawahTarbiyah}
                     />
                   )}
                 </div>

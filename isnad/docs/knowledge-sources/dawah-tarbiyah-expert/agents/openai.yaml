@@ -1,0 +1,14 @@
+interface:
+  display_name: Daʿwah & Tarbiyah Expert
+  short_description: Wise outreach and structured spiritual growth
+  default_prompt: Use $dawah-tarbiyah-expert to design a wise, evidence-based daʿwah
+    or tarbiyah approach for this situation.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
