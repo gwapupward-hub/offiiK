@@ -66,6 +66,9 @@ export const ABOUT_TEXT =
   "Arabic-language questions additionally use the Arabic Language Expert for " +
   "translation, grammar, morphology, meaning, rhetoric, and dialect—without " +
   "turning linguistic possibility into a religious ruling.\n\n" +
+  "Daʿwah and tarbiyah questions additionally use the Daʿwah & Tarbiyah Expert " +
+  "for wise outreach, convert care, teaching, mentorship, spiritual growth, " +
+  "and community programs—with consent, safeguarding, and healthy boundaries.\n\n" +
   "Finance questions (ribā, zakāh, crypto, mortgages, trade…) additionally " +
   "draw on a Muʿāmalāt add-on.\n\n" +
   DISCLAIMER;

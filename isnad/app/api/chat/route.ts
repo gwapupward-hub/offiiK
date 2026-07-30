@@ -3,6 +3,7 @@ import {
   buildSystemPrompt,
   isAqidahQuestion,
   isArabicQuestion,
+  isDawahTarbiyahQuestion,
   isHadithQuestion,
   isFinanceQuestion,
   isFiqhQuestion,
@@ -65,6 +66,9 @@ export async function POST(req: NextRequest) {
     const routedToSeerah = isSeerahQuestion(lastUserMessage?.content ?? "");
     const routedToAqidah = isAqidahQuestion(lastUserMessage?.content ?? "");
     const routedToArabic = isArabicQuestion(lastUserMessage?.content ?? "");
+    const routedToDawahTarbiyah = isDawahTarbiyahQuestion(
+      lastUserMessage?.content ?? ""
+    );
 
     const answer = await generateAnswer(systemPrompt, messages);
 
@@ -77,6 +81,7 @@ export async function POST(req: NextRequest) {
       routedToSeerah,
       routedToAqidah,
       routedToArabic,
+      routedToDawahTarbiyah,
     });
   } catch (err) {
     console.error("Chat route error:", err);
