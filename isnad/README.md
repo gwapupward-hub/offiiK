@@ -126,7 +126,8 @@ Mini App and the bot to work).
 ## Editing the knowledge base
 
 Update `knowledge/core.md`, `knowledge/muamalat.md`, `knowledge/tafsir.md`,
-or `knowledge/hadith.md` directly — no code changes are needed for content-only edits; they are read from
+or `knowledge/hadith.md` directly — no code changes are needed for content-only
+edits; they are read from
 disk when the server starts. To add another skill (for example, Sīrah or
 Fiqh-of-Worship), add a `.md` file in `knowledge/`, read it in
 `lib/knowledge.ts`, and give it a focused routing predicate.
@@ -169,7 +170,8 @@ the source of truth; the reference is kept in sync by hand.
 
 `docs/knowledge-sources/` holds the original skill specs for the Islamic Teacher
 Core, Muʿāmalāt Expert, Tafsīr Expert, and Hadith Sciences Expert, together
-with their manifests, references, and integration material. These files preserve provenance and support future edits;
+with their manifests, references, and integration material. These files preserve
+provenance and support future edits;
 the app does not read them at runtime.
 
 ## License
