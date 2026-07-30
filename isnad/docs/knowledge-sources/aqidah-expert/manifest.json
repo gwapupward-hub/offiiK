@@ -1,0 +1,39 @@
+{
+  "name": "aqidah_expert",
+  "display_name": "ʿAqīdah Expert",
+  "version": "1.0.0",
+  "type": "addon_skill",
+  "depends_on": [
+    "islamic_teacher_core"
+  ],
+  "optional_dependencies": [
+    "tafsir_expert",
+    "hadith_sciences_expert",
+    "fiqh_expert",
+    "seerah_expert"
+  ],
+  "description": "Evidence-based Sunni creed teaching covering tawhid, iman, Allah's names and attributes, revelation, prophethood, the unseen, qadar, theological disagreement, doubts, and takfir safeguards.",
+  "entrypoint": "SKILL.md",
+  "shared_files": [
+    "integration.md",
+    "references/source-policy.md",
+    "references/foundations-of-faith.md",
+    "references/names-and-attributes.md",
+    "references/revelation-prophethood-unseen.md",
+    "references/qadar-and-theodicy.md",
+    "references/disagreement-sects-and-takfir.md",
+    "references/response-standards.md",
+    "references/evaluation.md"
+  ],
+  "tags": [
+    "aqidah",
+    "tawhid",
+    "iman",
+    "names-and-attributes",
+    "prophethood",
+    "unseen",
+    "qadar",
+    "takfir",
+    "sunni-creed"
+  ]
+}

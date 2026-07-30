@@ -1,0 +1,14 @@
+interface:
+  display_name: ʿAqīdah Expert
+  short_description: Evidence-based Sunni creed research and teaching
+  default_prompt: Use $aqidah-expert to answer this creed question from the Qur'an,
+    authentic Sunnah, and the understanding of the early Muslims.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

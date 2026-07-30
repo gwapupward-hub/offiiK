@@ -29,6 +29,11 @@ the app itself does **not** read from this folder at runtime.
   chronology, life-period, campaign, treaty, response, and evaluation
   references. The app's bundled runtime version is
   `../../knowledge/seerah.md`.
+- `aqidah-expert/` — the full ʿAqīdah Expert add-on with foundations of faith,
+  names and attributes, revelation and unseen matters, qadar and theodicy,
+  theological disagreement, takfīr boundaries, response standards, and
+  evaluation references. The app's bundled runtime version is
+  `../../knowledge/aqidah.md`.
 
 If you want to change how the assistant answers, edit the runtime files in
 `/knowledge` directly (see the root `README.md`). Update these source files

@@ -13,6 +13,7 @@ const TAFSIR_SKILL = readKnowledge("tafsir.md");
 const HADITH_SKILL = readKnowledge("hadith.md");
 const FIQH_SKILL = readKnowledge("fiqh.md");
 const SEERAH_SKILL = readKnowledge("seerah.md");
+const AQIDAH_SKILL = readKnowledge("aqidah.md");
 
 // Keywords that route a question into the finance (Muʿāmalāt) add-on,
 // per that plugin's own integration.md routing rules.
@@ -97,7 +98,7 @@ const FIQH_KEYWORDS = [
   "hanafi", "ḥanafī", "maliki", "mālikī", "shafii", "shāfiʿī", "hanbali",
   "ḥanbalī", "ijma", "ijmāʿ", "qiyas", "qiyās", "usul al-fiqh",
   "uṣūl al-fiqh", "legal maxim", "necessity", "concession", "waswas", "waswās",
-  "purification", "apostasy", "takfir", "takfīr",
+  "purification", "apostasy", "apostate", "takfir", "takfīr",
   "فقه", "حكم", "حلال", "حرام", "وضوء", "غسل", "صلاة", "صيام", "زكاة",
   "حج", "نكاح", "طلاق", "مذهب", "إجماع", "قياس",
 ];
@@ -139,6 +140,49 @@ export function isSeerahQuestion(question: string): boolean {
   return SEERAH_KEYWORDS.some((kw) => q.includes(kw));
 }
 
+// ʿAqīdah owns doctrinal explanation. Keep these triggers focused on creed,
+// theological claims, and matters of the unseen; generic mentions of Allah,
+// Islam, faith, the Prophet ﷺ, or Sunnah should remain with the Core.
+const AQIDAH_KEYWORDS = [
+  "aqidah", "ʿaqīdah", "aqeedah", "creed", "islamic theology", "usul al-din",
+  "uṣūl al-dīn", "tawhid", "tawḥīd", "shirk", "rububiyyah", "rubūbiyyah",
+  "uluhiyyah", "ulūhiyyah", "asma wa sifat", "asmāʾ wa ṣifāt",
+  "names and attributes of allah", "allah's attribute", "allah’s attribute",
+  "divine attributes", "attribute of allah", "how is allah", "where is allah",
+  "istiwa", "istiwā", "allah's speech", "allah’s speech", "seeing allah",
+  "iman", "īmān", "increases and decreases", "major kufr", "minor kufr",
+  "kufr akbar", "kufr asghar", "nifaq", "nifāq", "hypocrisy in belief",
+  "fitrah", "fiṭrah", "nullifier of islam", "nullifiers of islam",
+  "apostasy", "apostate", "takfir", "takfīr", "declare someone a kafir",
+  "declare someone kafir",
+  "qadar", "qadr", "divine decree", "predestination", "free will in islam",
+  "allah decree", "allah decreed", "why does allah allow", "problem of evil",
+  "guidance and misguidance", "reliance on allah", "tawakkul",
+  "prophethood", "nubuwwah", "nubuwwa", "finality of prophethood",
+  "seal of the prophets", "revelation from allah", "wahy", "waḥy",
+  "isra and mi'raj", "isrāʾ and miʿrāj", "night journey and ascension",
+  "angels", "angel jibril", "angel gabriel", "jinn", "djinn", "unseen",
+  "al-ghayb", "ghayb",
+  "grave punishment", "punishment of the grave", "life in the grave", "barzakh",
+  "resurrection", "day of judgment", "judgement day", "signs of the hour",
+  "end times", "dajjal", "dajjāl", "mahdi", "mahdī", "intercession",
+  "shafa'ah", "shafāʿah", "paradise and hell", "jannah and jahannam",
+  "miracle", "miracles", "karamah", "karāmah", "dream means", "dream in islam",
+  "ashari", "ashʿarī", "maturidi", "māturīdī", "athari", "atharī",
+  "salafi creed", "ahl al-sunnah", "ahlus sunnah", "sunni theology",
+  "mu'tazila", "muʿtazila", "murjiah", "murji'ah", "murjiʾah", "khawarij",
+  "kharijites", "jahmiyyah", "qadariyyah", "jabriyyah", "rafidah", "rāfiḍah",
+  "intrusive thoughts about allah", "doubts about faith", "doubt my faith",
+  "am i still muslim", "did i leave islam", "religious waswas",
+  "عقيدة", "توحيد", "شرك", "إيمان", "كفر", "نفاق", "أسماء وصفات", "قدر",
+  "نبوة", "وحي", "ملائكة", "جن", "غيب", "قيامة", "شفاعة", "تكفير",
+];
+
+export function isAqidahQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return AQIDAH_KEYWORDS.some((kw) => q.includes(kw));
+}
+
 /**
  * Builds the system prompt following the load order defined in the
  * add-on integration rules:
@@ -152,6 +196,7 @@ export function buildSystemPrompt(question: string): string {
   const routeToHadith = isHadithQuestion(question);
   const routeToFiqh = isFiqhQuestion(question);
   const routeToSeerah = isSeerahQuestion(question);
+  const routeToAqidah = isAqidahQuestion(question);
 
   const parts = [
     "# LOADED SKILL: Islamic Teacher Core (authoritative — see load order below)",
@@ -179,6 +224,13 @@ export function buildSystemPrompt(question: string): string {
     );
   }
 
+  if (routeToAqidah) {
+    parts.push(
+      "\n\n# LOADED SKILL: ʿAqīdah Expert (creed add-on — depends on Core and shared source/hadith policy)",
+      AQIDAH_SKILL
+    );
+  }
+
   if (routeToFiqh) {
     parts.push(
       "\n\n# LOADED SKILL: Fiqh Expert (jurisprudence add-on — depends on Core and shared source policy)",
@@ -193,12 +245,20 @@ export function buildSystemPrompt(question: string): string {
     );
   }
 
-  if (routeToHadith || routeToTafsir || routeToSeerah || routeToFiqh || routeToFinance) {
+  if (
+    routeToHadith ||
+    routeToTafsir ||
+    routeToSeerah ||
+    routeToAqidah ||
+    routeToFiqh ||
+    routeToFinance
+  ) {
     parts.push(
       "\n\n# LOAD ORDER AND CONFLICT RULE\n" +
         "Islamic Teacher Core > shared source and hadith policy. " +
         "Seerah Expert owns historical reconstruction; Hadith Sciences owns report authentication; " +
-        "Tafsīr Expert owns Qur'anic interpretation; Fiqh Expert owns legal derivation; " +
+        "Tafsīr Expert owns Qur'anic interpretation; ʿAqīdah Expert owns doctrinal explanation; " +
+        "Fiqh Expert owns legal derivation and worldly legal consequences; " +
         "Muʿāmalāt is the financial specialization beneath Fiqh Expert.\n" +
         "Each add-on may add domain-specific detail but must never weaken the Core's " +
         "verification standards, hadith authentication rules, or safety/referral rules. " +
