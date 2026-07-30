@@ -11,11 +11,12 @@ type Message = {
   routedToFinance?: boolean;
   routedToTafsir?: boolean;
   routedToHadith?: boolean;
+  routedToFiqh?: boolean;
   error?: boolean;
 };
 
 const STARTERS = [
-  "What is the ruling on taking a mortgage to buy a home?",
+  "I joined prayer as the imam rose from rukūʿ. Did the rakʿah count?",
   "How do I calculate zakāh on savings and crypto?",
   "How can I verify whether a hadith is authentic?",
   "Is freelance income from a gambling-adjacent platform halal?",
@@ -78,6 +79,7 @@ export default function Home() {
               routedToFinance: data.routedToFinance,
               routedToTafsir: data.routedToTafsir,
               routedToHadith: data.routedToHadith,
+              routedToFiqh: data.routedToFiqh,
             },
           ]);
         }
@@ -199,6 +201,7 @@ export default function Home() {
                       routedToFinance={m.routedToFinance}
                       routedToTafsir={m.routedToTafsir}
                       routedToHadith={m.routedToHadith}
+                      routedToFiqh={m.routedToFiqh}
                     />
                   )}
                 </div>
