@@ -10,12 +10,16 @@ by a core skill and routed specialist add-ons:
 - `knowledge/tafsir.md` — Tafsīr Expert add-on, auto-routed for sūrah studies,
   āyah commentary, Qur'anic vocabulary, occasions of revelation, qirāʾāt,
   classical tafsīr comparisons, and numbered Qur'an references.
+- `knowledge/hadith.md` — Hadith Sciences Expert add-on, auto-routed for
+  takhrīj, source tracing, isnād and matn analysis, narrator criticism,
+  grading disputes, hidden defects, and fabricated-report checks.
 
 ## How it works
 
 - `lib/knowledge.ts` builds the system prompt at request time: always loads the
-  Core, then independently routes finance and Tafsīr add-ons. Cross-domain
-  questions can load both specialists while the Core remains authoritative.
+  Core, then independently routes finance, Tafsīr, and Hadith Sciences add-ons.
+  Cross-domain questions can load multiple specialists while the Core remains
+  authoritative.
 - `app/api/chat/route.ts` is a server-side API route that calls the OpenAI API
   with that system prompt. Your API key never reaches the browser.
 - `lib/providers.ts` sends the system prompt to OpenAI and returns the answer.
@@ -121,8 +125,8 @@ Mini App and the bot to work).
 
 ## Editing the knowledge base
 
-Update `knowledge/core.md`, `knowledge/muamalat.md`, or `knowledge/tafsir.md`
-directly — no code changes are needed for content-only edits; they are read from
+Update `knowledge/core.md`, `knowledge/muamalat.md`, `knowledge/tafsir.md`,
+or `knowledge/hadith.md` directly — no code changes are needed for content-only edits; they are read from
 disk when the server starts. To add another skill (for example, Sīrah or
 Fiqh-of-Worship), add a `.md` file in `knowledge/`, read it in
 `lib/knowledge.ts`, and give it a focused routing predicate.
@@ -164,8 +168,8 @@ the source of truth; the reference is kept in sync by hand.
 ## Knowledge source specs
 
 `docs/knowledge-sources/` holds the original skill specs for the Islamic Teacher
-Core, Muʿāmalāt Expert, and Tafsīr Expert, together with their manifests and
-integration material. These files preserve provenance and support future edits;
+Core, Muʿāmalāt Expert, Tafsīr Expert, and Hadith Sciences Expert, together
+with their manifests, references, and integration material. These files preserve provenance and support future edits;
 the app does not read them at runtime.
 
 ## License
