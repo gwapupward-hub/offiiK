@@ -85,7 +85,7 @@ export default function TelegramPage() {
             content: data.answer,
             routedToFinance: data.routedToFinance,
             routedToTafsir: data.routedToTafsir,
-              routedToHadith: data.routedToHadith,
+            routedToHadith: data.routedToHadith,
           },
         ]);
       }
