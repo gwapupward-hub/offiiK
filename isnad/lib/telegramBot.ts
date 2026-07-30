@@ -60,6 +60,9 @@ export const ABOUT_TEXT =
   "Seerah questions additionally use evidence-graded Prophetic biography, " +
   "chronology, and early historical reports without treating every popular " +
   "story as established.\n\n" +
+  "Creed questions additionally use the ʿAqīdah Expert for tawḥīd, īmān, " +
+  "Allah's names and attributes, qadar, the unseen, doubts, and theological " +
+  "disagreement—with strict safeguards against reckless takfīr.\n\n" +
   "Finance questions (ribā, zakāh, crypto, mortgages, trade…) additionally " +
   "draw on a Muʿāmalāt add-on.\n\n" +
   DISCLAIMER;

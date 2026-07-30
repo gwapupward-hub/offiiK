@@ -19,13 +19,17 @@ by a core skill and routed specialist add-ons:
 - `knowledge/seerah.md` — Seerah Expert add-on, auto-routed for Prophetic
   biography, chronology, family and Companions, campaigns, treaties, disputed
   stories, and evidence-graded historical reconstruction.
+- `knowledge/aqidah.md` — ʿAqīdah Expert add-on, auto-routed for tawḥīd, īmān
+  and kufr, Allah's names and attributes, prophethood, the unseen, qadar,
+  theological disagreement, doubts about faith, and takfīr principles.
 
 ## How it works
 
 - `lib/knowledge.ts` builds the system prompt at request time: always loads the
   Core, then independently routes Fiqh, finance, Tafsīr, Hadith Sciences, and
-  Seerah add-ons. Finance loads Fiqh first and Muʿāmalāt second; cross-domain
-  questions can load multiple specialists while the Core remains authoritative.
+  Seerah and ʿAqīdah add-ons. Finance loads Fiqh first and Muʿāmalāt second;
+  cross-domain questions can load multiple specialists while the Core remains
+  authoritative.
 - `app/api/chat/route.ts` is a server-side API route that calls the OpenAI API
   with that system prompt. Your API key never reaches the browser.
 - `lib/providers.ts` sends the system prompt to OpenAI and returns the answer.
@@ -132,11 +136,11 @@ Mini App and the bot to work).
 ## Editing the knowledge base
 
 Update `knowledge/core.md`, `knowledge/fiqh.md`, `knowledge/muamalat.md`,
-`knowledge/tafsir.md`, `knowledge/hadith.md`, or `knowledge/seerah.md` directly
-— no code changes are needed for content-only edits; they are read from disk
-when the server starts. To add another skill (for example, ʿAqīdah), add a
-`.md` file in `knowledge/`, read it in `lib/knowledge.ts`, and give it a focused
-routing predicate.
+`knowledge/tafsir.md`, `knowledge/hadith.md`, `knowledge/seerah.md`, or
+`knowledge/aqidah.md` directly — no code changes are needed for content-only
+edits; they are read from disk when the server starts. To add another skill,
+add a `.md` file in `knowledge/`, read it in `lib/knowledge.ts`, and give it a
+focused routing predicate.
 
 ## Notes
 
@@ -176,10 +180,9 @@ the source of truth; the reference is kept in sync by hand.
 
 `docs/knowledge-sources/` holds the original skill specs for the Islamic Teacher
 Core, Muʿāmalāt Expert, Tafsīr Expert, Hadith Sciences Expert, Fiqh Expert, and
-Seerah Expert,
-together with their manifests, references, and integration material. These
-files preserve provenance and support future edits; the app does not read them
-at runtime.
+Seerah Expert, and ʿAqīdah Expert, together with their manifests, references,
+and integration material. These files preserve provenance and support future
+edits; the app does not read them at runtime.
 
 ## License
 

@@ -13,6 +13,7 @@ type Message = {
   routedToHadith?: boolean;
   routedToFiqh?: boolean;
   routedToSeerah?: boolean;
+  routedToAqidah?: boolean;
   error?: boolean;
 };
 
@@ -25,6 +26,7 @@ const STARTERS = [
   "How do I calculate zakāh on savings and crypto?",
   "How can I verify whether a hadith is authentic?",
   "What is firmly established about the Hijrah and the cave?",
+  "How do qadar and human choice fit together?",
 ];
 
 /**
@@ -90,6 +92,7 @@ export default function TelegramPage() {
             routedToHadith: data.routedToHadith,
             routedToFiqh: data.routedToFiqh,
             routedToSeerah: data.routedToSeerah,
+            routedToAqidah: data.routedToAqidah,
           },
         ]);
       }
@@ -277,6 +280,7 @@ export default function TelegramPage() {
                       routedToHadith={m.routedToHadith}
                       routedToFiqh={m.routedToFiqh}
                       routedToSeerah={m.routedToSeerah}
+                      routedToAqidah={m.routedToAqidah}
                     />
                   )}
                 </div>
