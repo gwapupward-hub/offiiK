@@ -20,6 +20,11 @@ the app itself does **not** read from this folder at runtime.
   source policy, terminology, research workflow, response standards, and
   evaluation suite. The app's bundled runtime version is
   `../../knowledge/hadith.md`.
+- `fiqh-expert/` — the full Fiqh Expert add-on with uṣūl al-fiqh, legal maxims,
+  domain workflows, madhhab-comparison rules, response standards, evaluation,
+  and integrated Muʿāmalāt specialization. The app's shared runtime version is
+  `../../knowledge/fiqh.md`; finance additionally loads
+  `../../knowledge/muamalat.md`.
 
 If you want to change how the assistant answers, edit the runtime files in
 `/knowledge` directly (see the root `README.md`). Update these source files
