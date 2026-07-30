@@ -3,6 +3,7 @@ import {
   buildSystemPrompt,
   isHadithQuestion,
   isFinanceQuestion,
+  isFiqhQuestion,
   isTafsirQuestion,
 } from "@/lib/knowledge";
 import { validateTelegramInitData } from "@/lib/telegramAuth";
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
     const routedToFinance = isFinanceQuestion(lastUserMessage?.content ?? "");
     const routedToTafsir = isTafsirQuestion(lastUserMessage?.content ?? "");
     const routedToHadith = isHadithQuestion(lastUserMessage?.content ?? "");
+    const routedToFiqh = isFiqhQuestion(lastUserMessage?.content ?? "");
 
     const answer = await generateAnswer(systemPrompt, messages);
 
@@ -65,6 +67,7 @@ export async function POST(req: NextRequest) {
       routedToFinance,
       routedToTafsir,
       routedToHadith,
+      routedToFiqh,
     });
   } catch (err) {
     console.error("Chat route error:", err);

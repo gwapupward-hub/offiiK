@@ -11,6 +11,7 @@ const CORE_SKILL = readKnowledge("core.md");
 const MUAMALAT_SKILL = readKnowledge("muamalat.md");
 const TAFSIR_SKILL = readKnowledge("tafsir.md");
 const HADITH_SKILL = readKnowledge("hadith.md");
+const FIQH_SKILL = readKnowledge("fiqh.md");
 
 // Keywords that route a question into the finance (Muʿāmalāt) add-on,
 // per that plugin's own integration.md routing rules.
@@ -77,6 +78,34 @@ export function isHadithQuestion(question: string): boolean {
   return HADITH_KEYWORDS.some((kw) => q.includes(kw));
 }
 
+// Fiqh routes practical legal questions across worship, family, daily conduct,
+// madhhab comparison, and contemporary cases. Finance is included because
+// Muʿāmalāt is the dedicated specialization beneath the shared Fiqh policy.
+const FIQH_KEYWORDS = [
+  "fiqh", "ruling", "fatwa", "halal", "ḥalāl", "haram", "ḥarām",
+  "permissible", "prohibited", "forbidden", "obligatory", "recommended",
+  "disliked", "makruh", "makrūh", "wajib", "wājib", "fard", "farḍ",
+  "valid prayer", "invalid prayer", "valid fast", "invalid fast",
+  "wudu", "wuḍū", "ghusl", "tayammum", "najasah", "impurity", "menstruation",
+  "prayer", "salah", "ṣalāh", "rak'ah", "rakah", "rakʿah", "ruku", "rukūʿ",
+  "sujud", "sujūd", "latecomer", "missed prayer", "imam",
+  "fasting", "ramadan", "ramaḍān", "hajj", "umrah", "ʿumrah", "ihram", "iḥrām",
+  "slaughter", "marriage", "nikah", "nikāḥ", "divorce", "talaq", "ṭalāq",
+  "khul", "khulʿ", "custody", "inheritance", "estate", "bequest",
+  "oath", "vow", "kaffarah", "kaffārah", "madhhab", "madhab",
+  "hanafi", "ḥanafī", "maliki", "mālikī", "shafii", "shāfiʿī", "hanbali",
+  "ḥanbalī", "ijma", "ijmāʿ", "qiyas", "qiyās", "usul al-fiqh",
+  "uṣūl al-fiqh", "legal maxim", "necessity", "concession", "waswas", "waswās",
+  "purification", "apostasy", "takfir", "takfīr",
+  "فقه", "حكم", "حلال", "حرام", "وضوء", "غسل", "صلاة", "صيام", "زكاة",
+  "حج", "نكاح", "طلاق", "مذهب", "إجماع", "قياس",
+];
+
+export function isFiqhQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return isFinanceQuestion(question) || FIQH_KEYWORDS.some((kw) => q.includes(kw));
+}
+
 /**
  * Builds the system prompt following the load order defined in the
  * add-on integration rules:
@@ -88,6 +117,7 @@ export function buildSystemPrompt(question: string): string {
   const routeToFinance = isFinanceQuestion(question);
   const routeToTafsir = isTafsirQuestion(question);
   const routeToHadith = isHadithQuestion(question);
+  const routeToFiqh = isFiqhQuestion(question);
 
   const parts = [
     "# LOADED SKILL: Islamic Teacher Core (authoritative — see load order below)",
@@ -108,17 +138,24 @@ export function buildSystemPrompt(question: string): string {
     );
   }
 
+  if (routeToFiqh) {
+    parts.push(
+      "\n\n# LOADED SKILL: Fiqh Expert (jurisprudence add-on — depends on Core and shared source policy)",
+      FIQH_SKILL
+    );
+  }
+
   if (routeToFinance) {
     parts.push(
-      "\n\n# LOADED SKILL: Muʿāmalāt Expert (finance add-on — depends on Core above)",
+      "\n\n# LOADED SKILL: Muʿāmalāt Expert (financial specialization — depends on Fiqh Expert above)",
       MUAMALAT_SKILL
     );
   }
 
-  if (routeToHadith || routeToTafsir || routeToFinance) {
+  if (routeToHadith || routeToTafsir || routeToFiqh || routeToFinance) {
     parts.push(
       "\n\n# LOAD ORDER AND CONFLICT RULE\n" +
-        "core authority > shared policy > add-on specialization\n" +
+        "Islamic Teacher Core > shared source and hadith policy > Fiqh Expert > Muʿāmalāt specialization\n" +
         "Each add-on may add domain-specific detail but must never weaken the Core's " +
         "verification standards, hadith authentication rules, or safety/referral rules. " +
         "When multiple add-ons are loaded, combine their relevant analysis without letting " +

@@ -12,11 +12,13 @@ export default function AnswerMessage({
   routedToFinance,
   routedToTafsir,
   routedToHadith,
+  routedToFiqh,
 }: {
   content: string;
   routedToFinance?: boolean;
   routedToTafsir?: boolean;
   routedToHadith?: boolean;
+  routedToFiqh?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const { lead, tiers, certainty, structured } = parseAnswer(content);
@@ -34,9 +36,15 @@ export default function AnswerMessage({
   return (
     <div>
       <article className="rounded-2xl border border-[var(--pine)]/15 bg-[var(--parchment-soft)] px-5 py-4 shadow-sm sm:px-6 sm:py-5">
-        {(certainty || routedToFinance || routedToTafsir || routedToHadith) && (
+        {(certainty || routedToFinance || routedToTafsir || routedToHadith || routedToFiqh) && (
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {certainty && <CertaintyChip certainty={certainty} />}
+            {routedToFiqh && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)]/15 px-2.5 py-1 text-[11px] font-medium text-[var(--pine-deep)]">
+                <span className="star-8 inline-block h-2 w-2 bg-[var(--gold)]" aria-hidden="true" />
+                Fiqh
+              </span>
+            )}
             {routedToHadith && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--pine-deep)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--pine-deep)]">
                 <span className="star-8 inline-block h-2 w-2 bg-[var(--gold)]" aria-hidden="true" />

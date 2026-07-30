@@ -1,0 +1,38 @@
+{
+  "name": "fiqh_expert",
+  "display_name": "Fiqh Expert",
+  "version": "1.0.0",
+  "type": "addon_skill",
+  "depends_on": [
+    "islamic_teacher_core"
+  ],
+  "optional_dependencies": [
+    "tafsir_expert",
+    "hadith_sciences_expert"
+  ],
+  "specializations": [
+    "muamalat_expert"
+  ],
+  "description": "Sunni Islamic jurisprudence for worship, family law, daily conduct, madhhab comparison, usul al-fiqh, contemporary issues, and integrated fiqh al-muamalat.",
+  "entrypoint": "SKILL.md",
+  "shared_files": [
+    "integration.md",
+    "references/source-policy.md",
+    "references/usul-and-maxims.md",
+    "references/madhhab-and-disagreement.md",
+    "references/domain-workflows.md",
+    "references/muamalat.md",
+    "references/response-standards.md",
+    "references/evaluation.md"
+  ],
+  "tags": [
+    "fiqh",
+    "usul-al-fiqh",
+    "madhhab",
+    "worship",
+    "family-law",
+    "contemporary-fiqh",
+    "muamalat",
+    "islamic-finance"
+  ]
+}
