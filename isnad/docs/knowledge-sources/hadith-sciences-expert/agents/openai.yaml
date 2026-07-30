@@ -1,0 +1,12 @@
+interface:
+  display_name: Hadith Sciences Expert
+  short_description: Verify, classify, and explain hadith reports
+  default_prompt: Use $hadith-sciences-expert to trace, assess, and explain this hadith
+    with careful sourcing.
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

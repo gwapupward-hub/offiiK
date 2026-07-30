@@ -10,13 +10,14 @@ type Message = {
   content: string;
   routedToFinance?: boolean;
   routedToTafsir?: boolean;
+  routedToHadith?: boolean;
   error?: boolean;
 };
 
 const STARTERS = [
   "What is the ruling on taking a mortgage to buy a home?",
   "How do I calculate zakāh on savings and crypto?",
-  "What does the Qur'an say about honesty in trade?",
+  "How can I verify whether a hadith is authentic?",
   "Is freelance income from a gambling-adjacent platform halal?",
 ];
 
@@ -76,6 +77,7 @@ export default function Home() {
               content: data.answer,
               routedToFinance: data.routedToFinance,
               routedToTafsir: data.routedToTafsir,
+              routedToHadith: data.routedToHadith,
             },
           ]);
         }
@@ -196,6 +198,7 @@ export default function Home() {
                       content={m.content}
                       routedToFinance={m.routedToFinance}
                       routedToTafsir={m.routedToTafsir}
+                      routedToHadith={m.routedToHadith}
                     />
                   )}
                 </div>

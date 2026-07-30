@@ -16,6 +16,10 @@ the app itself does **not** read from this folder at runtime.
 - `tafsir-expert/` — the full Tafsīr Expert add-on with its manifest and
   integration rules. The app's runtime version is
   `../../knowledge/tafsir.md`.
+- `hadith-sciences-expert/` — the Hadith Sciences Expert add-on, including its
+  source policy, terminology, research workflow, response standards, and
+  evaluation suite. The app's bundled runtime version is
+  `../../knowledge/hadith.md`.
 
 If you want to change how the assistant answers, edit the runtime files in
 `/knowledge` directly (see the root `README.md`). Update these source files
