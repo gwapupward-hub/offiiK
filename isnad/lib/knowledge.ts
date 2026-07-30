@@ -10,6 +10,7 @@ function readKnowledge(file: string): string {
 const CORE_SKILL = readKnowledge("core.md");
 const MUAMALAT_SKILL = readKnowledge("muamalat.md");
 const TAFSIR_SKILL = readKnowledge("tafsir.md");
+const HADITH_SKILL = readKnowledge("hadith.md");
 
 // Keywords that route a question into the finance (Muʿāmalāt) add-on,
 // per that plugin's own integration.md routing rules.
@@ -50,6 +51,32 @@ export function isTafsirQuestion(question: string): boolean {
   return TAFSIR_KEYWORDS.some((kw) => q.includes(kw)) || QURAN_REFERENCE.test(q);
 }
 
+// Hadith Sciences is reserved for source-tracing and authentication work. Keep
+// this narrower than general Sunnah questions so ordinary guidance stays with
+// the Core unless the user is asking about a report, chain, narrator, or grade.
+const HADITH_KEYWORDS = [
+  "hadith", "hadeeth", "ḥadīth", "isnad", "isnād", "sanad", "matn",
+  "chain of narration", "chain of transmission", "narrator", "narrated by",
+  "takhrij", "takhrīj", "grade this", "grading of", "authentic narration",
+  "authentic report", "weak narration", "weak hadith", "fabricated hadith",
+  "false hadith", "sahih", "ṣaḥīḥ", "hasan", "ḥasan", "daif", "ḍaʿīf",
+  "mawdu", "mawḍūʿ", "marfu", "marfūʿ", "mawquf", "mawqūf", "maqtu",
+  "maqṭūʿ", "mursal", "muallaq", "muʿallaq", "mutawatir", "mutawātir",
+  "ahad hadith", "khabar al-wahid", "jarh wa tadil", "jarḥ wa taʿdīl",
+  "ilm al-rijal", "ʿilm al-rijāl", "hidden defect", "illah", "ʿillah",
+  "shadh", "shādhdh", "tadlis", "tadlīs", "mudallas", "hadith number",
+  "bukhari", "bukhārī", "sahih muslim", "ṣaḥīḥ muslim", "muslim hadith",
+  "tirmidhi", "tirmidhī", "abu dawud",
+  "abū dāwūd", "nasai", "nasāʾī", "ibn majah", "ibn mājah", "musnad ahmad",
+  "musnad aḥmad", "muwatta", "muwaṭṭa", "حديث", "إسناد", "سند", "متن",
+  "صحيح", "حسن", "ضعيف", "موضوع", "تخريج", "علل",
+];
+
+export function isHadithQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  return HADITH_KEYWORDS.some((kw) => q.includes(kw));
+}
+
 /**
  * Builds the system prompt following the load order defined in the
  * add-on integration rules:
@@ -60,11 +87,19 @@ export function isTafsirQuestion(question: string): boolean {
 export function buildSystemPrompt(question: string): string {
   const routeToFinance = isFinanceQuestion(question);
   const routeToTafsir = isTafsirQuestion(question);
+  const routeToHadith = isHadithQuestion(question);
 
   const parts = [
     "# LOADED SKILL: Islamic Teacher Core (authoritative — see load order below)",
     CORE_SKILL,
   ];
+
+  if (routeToHadith) {
+    parts.push(
+      "\n\n# LOADED SKILL: Hadith Sciences Expert (authentication add-on — depends on Core above)",
+      HADITH_SKILL
+    );
+  }
 
   if (routeToTafsir) {
     parts.push(
@@ -80,7 +115,7 @@ export function buildSystemPrompt(question: string): string {
     );
   }
 
-  if (routeToTafsir || routeToFinance) {
+  if (routeToHadith || routeToTafsir || routeToFinance) {
     parts.push(
       "\n\n# LOAD ORDER AND CONFLICT RULE\n" +
         "core authority > shared policy > add-on specialization\n" +
