@@ -1,0 +1,14 @@
+interface:
+  display_name: Fiqh Expert
+  short_description: Analyze Sunni fiqh with evidence and context
+  default_prompt: Use $fiqh-expert to analyze this Islamic legal question with evidence,
+    scholarly context, and practical guidance.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
