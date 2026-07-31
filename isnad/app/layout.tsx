@@ -2,11 +2,38 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Isnad — Ask, and trace the answer",
+  metadataBase: new URL("https://isnadsunnah.vercel.app"),
+  title: {
+    default: "Isnad — Islamic knowledge traced to its source",
+    template: "%s | Isnad",
+  },
   description:
-    "An Islamic knowledge assistant that answers from the Qur'an, authentic Sunnah, and the understanding of the Companions and early scholars — with sources shown, and disagreement never hidden.",
+    "An evidence-based Islamic knowledge assistant grounded in the Qur'an, authentic Sunnah, the understanding of the Companions, and recognized Sunni scholarship.",
   applicationName: "Isnad",
+  keywords: [
+    "Islamic AI",
+    "Quran",
+    "Sunnah",
+    "Hadith",
+    "Tafsir",
+    "Fiqh",
+    "Islamic knowledge",
+  ],
   manifest: "/manifest.webmanifest",
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Isnad",
+    title: "Isnad — Islamic knowledge traced to its source",
+    description:
+      "Ask questions about Islam with evidence from the Qur'an, authentic Sunnah, the Companions, and recognized scholarship.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Isnad — Islamic knowledge traced to its source",
+    description:
+      "Evidence-based Islamic answers across the web, Telegram bot, and Telegram Mini App.",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -25,8 +52,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  colorScheme: "light dark",
-  themeColor: "#050505",
+  colorScheme: "dark light",
+  themeColor: "#050806",
 };
 
 export default function RootLayout({
