@@ -235,7 +235,9 @@ export default function TelegramPage() {
       }
     }
     button.onClick(handler);
-    return () => button.offClick(handler);
+    return () => {
+      button.offClick(handler);
+    };
   }, [ready, input, loading, view]);
 
   useEffect(() => {
