@@ -192,7 +192,8 @@ export async function handleTelegramUpdate(token: string, update: TelegramUpdate
   const text = message?.text?.trim();
   if (typeof chatId !== "number" || !text) return;
 
-  const userId = message.from ? await upsertTelegramIdentity(message.from) : null;
+  const sender = message?.from;
+  const userId = sender ? await upsertTelegramIdentity(sender) : null;
   const settings = await getSettings(userId);
   const parsed = parseCommand(text);
 
