@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import AnswerMessage from "@/components/AnswerMessage";
 import ChainLoader from "@/components/ChainLoader";
 import IsnadChain from "@/components/IsnadChain";
+import { consumeEventStream } from "@/lib/sseClient";
 
 type Message = {
   role: "user" | "assistant";
@@ -20,6 +21,18 @@ type Message = {
   error?: boolean;
 };
 
+type RoutingData = Pick<
+  Message,
+  | "routedToFinance"
+  | "routedToTafsir"
+  | "routedToHadith"
+  | "routedToFiqh"
+  | "routedToSeerah"
+  | "routedToAqidah"
+  | "routedToArabic"
+  | "routedToDawahTarbiyah"
+>;
+
 const STARTERS = [
   "I joined prayer as the imam rose from rukūʿ. Did the rakʿah count?",
   "How do I calculate zakāh on savings and crypto?",
@@ -28,6 +41,19 @@ const STARTERS = [
   "How do qadar and human choice fit together?",
   "Parse إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ and explain how its grammar shapes the translation.",
 ];
+
+function routingFrom(data: Record<string, unknown>): RoutingData {
+  return {
+    routedToFinance: Boolean(data.routedToFinance),
+    routedToTafsir: Boolean(data.routedToTafsir),
+    routedToHadith: Boolean(data.routedToHadith),
+    routedToFiqh: Boolean(data.routedToFiqh),
+    routedToSeerah: Boolean(data.routedToSeerah),
+    routedToAqidah: Boolean(data.routedToAqidah),
+    routedToArabic: Boolean(data.routedToArabic),
+    routedToDawahTarbiyah: Boolean(data.routedToDawahTarbiyah),
+  };
+}
 
 export default function AskPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -55,59 +81,63 @@ export default function AskPage() {
 
   const ask = useCallback(async (question: string, history: Message[]) => {
     const nextMessages: Message[] = [...history, { role: "user", content: question }];
-    setMessages(nextMessages);
+    setMessages([...nextMessages, { role: "assistant", content: "" }]);
     setInput("");
     setLoading(true);
     setLastFailed(null);
 
+    const updatePending = (update: (message: Message) => Message) => {
+      setMessages((current) => {
+        const copy = [...current];
+        const index = copy.length - 1;
+        if (index >= 0 && copy[index].role === "assistant") {
+          copy[index] = update(copy[index]);
+        }
+        return copy;
+      });
+    };
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+        },
         body: JSON.stringify({
           messages: nextMessages.map(({ role, content }) => ({ role, content })),
         }),
       });
-      const data = await response.json();
 
-      if (!response.ok) {
-        setLastFailed(question);
-        setMessages((current) => [
-          ...current,
-          {
-            role: "assistant",
-            content: data.error ?? "Something went wrong while answering this question.",
-            error: true,
-          },
-        ]);
-        return;
-      }
-
-      setMessages((current) => [
-        ...current,
-        {
-          role: "assistant",
-          content: data.answer,
-          routedToFinance: data.routedToFinance,
-          routedToTafsir: data.routedToTafsir,
-          routedToHadith: data.routedToHadith,
-          routedToFiqh: data.routedToFiqh,
-          routedToSeerah: data.routedToSeerah,
-          routedToAqidah: data.routedToAqidah,
-          routedToArabic: data.routedToArabic,
-          routedToDawahTarbiyah: data.routedToDawahTarbiyah,
-        },
-      ]);
-    } catch {
+      await consumeEventStream(response, ({ event, data }) => {
+        if (event === "meta" || event === "done") {
+          const routing = routingFrom(data);
+          updatePending((message) => ({ ...message, ...routing }));
+        }
+        if (event === "delta" && typeof data.delta === "string") {
+          updatePending((message) => ({
+            ...message,
+            content: message.content + data.delta,
+          }));
+        }
+        if (event === "error") {
+          throw new Error(
+            typeof data.error === "string"
+              ? data.error
+              : "Something went wrong while answering this question."
+          );
+        }
+      });
+    } catch (error) {
       setLastFailed(question);
-      setMessages((current) => [
-        ...current,
-        {
-          role: "assistant",
-          content: "Could not reach the server. Check your connection and try again.",
-          error: true,
-        },
-      ]);
+      updatePending((message) => ({
+        ...message,
+        content:
+          error instanceof Error
+            ? error.message
+            : "Could not reach the server. Check your connection and try again.",
+        error: true,
+      }));
     } finally {
       setLoading(false);
     }
@@ -132,6 +162,7 @@ export default function AskPage() {
   }
 
   const hasStarted = messages.length > 0;
+  const awaitingFirstToken = loading && messages.at(-1)?.content === "";
 
   return (
     <main className="flex min-h-screen flex-1 flex-col bg-[var(--parchment)]">
@@ -188,7 +219,7 @@ export default function AskPage() {
                     {message.content}
                   </div>
                 </div>
-              ) : (
+              ) : message.content ? (
                 <div key={`${message.role}-${index}`} className="w-full max-w-full self-start">
                   {message.error ? (
                     <div className="rounded-2xl border border-[#8a1f1f]/20 bg-[#fbf1f1] px-4 py-3.5 text-sm text-[#7a1f1f]">
@@ -216,9 +247,9 @@ export default function AskPage() {
                     />
                   )}
                 </div>
-              ),
+              ) : null
             )}
-            {loading && <ChainLoader />}
+            {awaitingFirstToken && <ChainLoader />}
             <div ref={scrollRef} />
           </div>
         </div>
