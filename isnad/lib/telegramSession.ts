@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
+import type { UserSettings } from "@/lib/appTypes";
 import { databaseConfigured } from "@/lib/db";
 import { getSettings, upsertTelegramIdentity } from "@/lib/store";
 import { validateTelegramInitData } from "@/lib/telegramAuth";
-import type { UserSettings } from "@/lib/appTypes";
 
 type TelegramUser = NonNullable<ReturnType<typeof validateTelegramInitData>["user"]>;
 
@@ -53,7 +53,14 @@ export async function resolveTelegramSession(
     };
   }
 
-  const userId = await upsertTelegramIdentity(validation.user);
+  const userId = await upsertTelegramIdentity({
+    id: validation.user.id,
+    first_name:
+      validation.user.first_name?.trim() || validation.user.username?.trim() || "Telegram user",
+    last_name: validation.user.last_name,
+    username: validation.user.username,
+    language_code: validation.user.language_code,
+  });
   const settings = await getSettings(userId);
   return { ok: true, user: validation.user, userId, settings };
 }
