@@ -280,7 +280,7 @@ export async function saveMessage(input: {
     const [row] = await transaction`
       INSERT INTO messages (conversation_id, role, content, model, routing)
       VALUES (${input.conversationId}, ${input.role}, ${input.content},
-              ${input.model ?? null}, ${transaction.json(input.routing ?? {})})
+              ${input.model ?? null}, ${transaction.json((input.routing ?? {}) as never)})
       RETURNING id::text AS id
     `;
     const messageId = row.id as string;
@@ -360,7 +360,7 @@ export async function recordEvent(
   const sql = getDatabase();
   await sql`
     INSERT INTO analytics_events (user_id, event_name, properties)
-    VALUES (${userId}, ${eventName}, ${sql.json(properties)})
+    VALUES (${userId}, ${eventName}, ${sql.json(properties as never)})
   `;
 }
 
