@@ -1,0 +1,42 @@
+name: Synchronize Isnad toolchain lockfile
+
+on:
+  push:
+    branches:
+      - agent/sync-isnad-toolchain
+    paths:
+      - isnad/package.json
+      - .github/workflows/sync-isnad-toolchain.yml
+
+permissions:
+  contents: write
+
+jobs:
+  synchronize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out toolchain branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/sync-isnad-toolchain
+          fetch-depth: 0
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: isnad/package-lock.json
+
+      - name: Regenerate package lock
+        working-directory: isnad
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Remove one-use workflow and commit
+        run: |
+          rm .github/workflows/sync-isnad-toolchain.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add isnad/package-lock.json .github/workflows/sync-isnad-toolchain.yml
+          git commit -m "Synchronize Isnad toolchain lockfile"
+          git push origin HEAD:agent/sync-isnad-toolchain
