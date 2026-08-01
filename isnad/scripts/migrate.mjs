@@ -3,6 +3,14 @@ import path from "node:path";
 import process from "node:process";
 import postgres from "postgres";
 
+const isVercelBuild = process.argv.includes("--vercel-build");
+const vercelEnvironment = process.env.VERCEL_ENV;
+
+if (isVercelBuild && vercelEnvironment !== "production") {
+  console.log(`Skipping database migrations for Vercel environment: ${vercelEnvironment ?? "unknown"}.`);
+  process.exit(0);
+}
+
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   console.error("DATABASE_URL is required to run migrations.");
@@ -16,7 +24,12 @@ const sql = postgres(databaseUrl, {
   ssl: process.env.DATABASE_SSL === "disable" ? false : "require",
 });
 
+let advisoryLockHeld = false;
+
 try {
+  await sql`SELECT pg_advisory_lock(hashtext('isnad_schema_migrations'))`;
+  advisoryLockHeld = true;
+
   await sql`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       filename TEXT PRIMARY KEY,
@@ -47,5 +60,8 @@ try {
     console.log(`Applied ${filename}`);
   }
 } finally {
+  if (advisoryLockHeld) {
+    await sql`SELECT pg_advisory_unlock(hashtext('isnad_schema_migrations'))`.catch(() => undefined);
+  }
   await sql.end();
 }
