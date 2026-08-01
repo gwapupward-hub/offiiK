@@ -8,13 +8,26 @@ export async function GET() {
   const database = await checkDatabase();
   const openaiConfigured = Boolean(process.env.OPENAI_API_KEY);
   const telegramConfigured = Boolean(
-    process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_WEBHOOK_SECRET
+    process.env.TELEGRAM_BOT_TOKEN &&
+      process.env.TELEGRAM_WEBHOOK_SECRET &&
+      process.env.TELEGRAM_MINI_APP_URL &&
+      process.env.PUBLIC_BASE_URL
   );
-  const healthy = openaiConfigured && (!database.configured || database.reachable);
+
+  const ready =
+    openaiConfigured &&
+    telegramConfigured &&
+    database.configured &&
+    database.reachable &&
+    database.schemaReady;
+
+  const operational =
+    openaiConfigured && (!database.configured || database.reachable);
 
   return NextResponse.json(
     {
-      status: healthy ? (database.configured ? "healthy" : "degraded") : "unhealthy",
+      status: ready ? "healthy" : operational ? "degraded" : "unhealthy",
+      ready,
       timestamp: new Date().toISOString(),
       services: {
         openai: { configured: openaiConfigured },
@@ -22,6 +35,6 @@ export async function GET() {
         database,
       },
     },
-    { status: healthy ? 200 : 503 }
+    { status: operational ? 200 : 503 }
   );
 }
