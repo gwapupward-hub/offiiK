@@ -99,6 +99,8 @@ const principles = [
   },
 ];
 
+const telegramMiniAppUrl = "https://t.me/the_isnad_bot/askiik";
+
 function ArrowIcon() {
   return (
     <svg viewBox="0 0 20 20" aria-hidden="true" className="h-4 w-4" fill="none">
@@ -184,13 +186,16 @@ export default function Home() {
               Start asking
               <ArrowIcon />
             </Link>
-            <Link
-              href="/telegram"
+            <a
+              href={telegramMiniAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open the Isnad Telegram Mini App"
               className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-6 py-3.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.07]"
             >
               <TelegramIcon />
               Open Telegram Mini App
-            </Link>
+            </a>
           </div>
 
           <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-xs text-white/45">
@@ -401,19 +406,22 @@ export default function Home() {
                 <a
                   href="https://t.me/the_isnad_bot"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-[#d7b55d] px-6 py-3.5 text-sm font-bold text-[#09100d] transition hover:bg-[#ebcd7c]"
                 >
                   <TelegramIcon />
                   Launch the bot
                 </a>
-                <Link
-                  href="/telegram"
+                <a
+                  href={telegramMiniAppUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open the Isnad Telegram Mini App"
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-6 py-3.5 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.08]"
                 >
                   Open Mini App
                   <ArrowIcon />
-                </Link>
+                </a>
               </div>
             </div>
 
@@ -437,7 +445,14 @@ export default function Home() {
                     Routing to Hadith Sciences and Arabic Language…
                   </div>
                 </div>
-                <div className="mt-5 rounded-xl bg-[#d7b55d] py-3 text-center text-xs font-bold text-[#09100d]">OPEN ISNAD</div>
+                <a
+                  href={telegramMiniAppUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-5 block rounded-xl bg-[#d7b55d] py-3 text-center text-xs font-bold text-[#09100d] transition hover:bg-[#ebcd7c]"
+                >
+                  OPEN ISNAD
+                </a>
               </div>
             </div>
           </div>
@@ -480,7 +495,7 @@ export default function Home() {
               Ask Isnad now
               <ArrowIcon />
             </Link>
-            <a href="https://t.me/the_isnad_bot" target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-7 py-3.5 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.08]">
+            <a href={telegramMiniAppUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-7 py-3.5 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.08]">
               <TelegramIcon />
               Continue on Telegram
             </a>
@@ -502,8 +517,8 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-x-12 gap-y-3 text-sm text-white/45 sm:grid-cols-4">
             <Link href="/ask" className="hover:text-white">Ask</Link>
             <a href="#method" className="hover:text-white">Method</a>
-            <Link href="/telegram" className="hover:text-white">Mini App</Link>
-            <a href="https://github.com/gwapupward-hub/offiiK" target="_blank" rel="noreferrer" className="hover:text-white">GitHub</a>
+            <a href={telegramMiniAppUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white">Mini App</a>
+            <a href="https://github.com/gwapupward-hub/offiiK" target="_blank" rel="noopener noreferrer" className="hover:text-white">GitHub</a>
           </div>
         </div>
         <div className="border-t border-white/[0.06] px-5 py-5 text-center text-[11px] text-white/25">
