@@ -40,14 +40,11 @@ export function validateTelegramInitData(
   const hash = params.get("hash");
   if (!hash) return { valid: false };
 
-  // data-check-string: every field except `hash` and `signature`, as
-  // `key=value`, sorted alphabetically by key and joined with newlines.
-  // `signature` (an Ed25519 signature for third-party validation, added in
-  // Bot API 8.0) is present in initData from modern clients but is excluded
-  // from the bot-token HMAC's data-check-string — Telegram itself computes
-  // `hash` without it, so including it here makes the hashes never match.
+  // For bot-token HMAC validation, Telegram signs every received field except
+  // `hash`. Modern clients may include an Ed25519 `signature` field; it must
+  // remain in this data-check-string or the HMAC comparison will fail.
   const dataCheckString = [...params.entries()]
-    .filter(([key]) => key !== "hash" && key !== "signature")
+    .filter(([key]) => key !== "hash")
     .map(([key, value]) => `${key}=${value}`)
     .sort()
     .join("\n");
