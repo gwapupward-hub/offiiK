@@ -71,9 +71,17 @@ export default function ConversationHistory({
           <h1 className="mt-1 font-display text-2xl">Saved conversations</h1>
         </div>
         {authenticated && (
-          <span className="text-xs opacity-50">
-            {conversations.length} {conversations.length === 1 ? "chat" : "chats"}
-          </span>
+          <div className="flex flex-col items-end gap-2">
+            <a
+              href="/telegram/library"
+              className="rounded-full border px-3 py-1.5 text-xs font-semibold"
+            >
+              Bookmarks &amp; notes
+            </a>
+            <span className="text-xs opacity-50">
+              {conversations.length} {conversations.length === 1 ? "chat" : "chats"}
+            </span>
+          </div>
         )}
       </div>
 
