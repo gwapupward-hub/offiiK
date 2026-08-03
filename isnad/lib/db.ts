@@ -19,6 +19,14 @@ const REQUIRED_TABLES = [
   "api_rate_limits",
   "knowledge_documents",
   "knowledge_chunks",
+  "bookmark_collections",
+  "bookmarks",
+  "study_notes",
+  "learning_courses",
+  "learning_modules",
+  "learning_lessons",
+  "course_enrollments",
+  "lesson_progress",
 ] as const;
 
 export function databaseConfigured(): boolean {
@@ -69,22 +77,7 @@ export async function checkDatabase(): Promise<DatabaseHealth> {
     await sql`SELECT 1`;
 
     const [tables] = await sql<
-      Array<{
-        schema_migrations: boolean;
-        users: boolean;
-        telegram_identities: boolean;
-        profiles: boolean;
-        user_settings: boolean;
-        conversations: boolean;
-        messages: boolean;
-        message_citations: boolean;
-        memory_summaries: boolean;
-        analytics_events: boolean;
-        processed_telegram_updates: boolean;
-        api_rate_limits: boolean;
-        knowledge_documents: boolean;
-        knowledge_chunks: boolean;
-      }>
+      Array<Record<(typeof REQUIRED_TABLES)[number], boolean>>
     >`
       SELECT
         to_regclass('public.schema_migrations') IS NOT NULL AS schema_migrations,
@@ -100,7 +93,15 @@ export async function checkDatabase(): Promise<DatabaseHealth> {
         to_regclass('public.processed_telegram_updates') IS NOT NULL AS processed_telegram_updates,
         to_regclass('public.api_rate_limits') IS NOT NULL AS api_rate_limits,
         to_regclass('public.knowledge_documents') IS NOT NULL AS knowledge_documents,
-        to_regclass('public.knowledge_chunks') IS NOT NULL AS knowledge_chunks
+        to_regclass('public.knowledge_chunks') IS NOT NULL AS knowledge_chunks,
+        to_regclass('public.bookmark_collections') IS NOT NULL AS bookmark_collections,
+        to_regclass('public.bookmarks') IS NOT NULL AS bookmarks,
+        to_regclass('public.study_notes') IS NOT NULL AS study_notes,
+        to_regclass('public.learning_courses') IS NOT NULL AS learning_courses,
+        to_regclass('public.learning_modules') IS NOT NULL AS learning_modules,
+        to_regclass('public.learning_lessons') IS NOT NULL AS learning_lessons,
+        to_regclass('public.course_enrollments') IS NOT NULL AS course_enrollments,
+        to_regclass('public.lesson_progress') IS NOT NULL AS lesson_progress
     `;
 
     const missingTables = REQUIRED_TABLES.filter((table) => !tables?.[table]);
@@ -113,12 +114,19 @@ export async function checkDatabase(): Promise<DatabaseHealth> {
       appliedMigrations = migrations.map((migration) => migration.filename);
     }
 
+    const requiredMigrations = [
+      "001_phase_1_foundation.sql",
+      "002_saved_conversations.sql",
+      "003_bookmarks_notes.sql",
+      "004_guided_learning.sql",
+    ];
+
     return {
       configured: true,
       reachable: true,
       schemaReady:
         missingTables.length === 0 &&
-        appliedMigrations.includes("001_phase_1_foundation.sql"),
+        requiredMigrations.every((migration) => appliedMigrations.includes(migration)),
       appliedMigrations,
       missingTables,
     };
