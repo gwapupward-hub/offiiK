@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import KnowledgeLibrary from "@/components/KnowledgeLibrary";
+import DailyKnowledge from "@/components/DailyKnowledge";
 
 type WebAppSdk = (typeof import("@twa-dev/sdk"))["default"];
 
-export default function TelegramLibraryPage() {
+export default function TelegramDailyPage() {
   const [ready, setReady] = useState(false);
   const initDataRef = useRef("");
   const containerRef = useRef<HTMLElement>(null);
@@ -19,7 +19,7 @@ export default function TelegramLibraryPage() {
   useEffect(() => {
     let cancelled = false;
     import("@twa-dev/sdk")
-      .then(({ default: WebApp }) => {
+      .then(({ default: WebApp }: { default: WebAppSdk }) => {
         if (cancelled) return;
         WebApp.ready();
         WebApp.expand();
@@ -59,24 +59,21 @@ export default function TelegramLibraryPage() {
           <a href="/telegram/learn" className="rounded-full border px-3 py-1.5 text-xs font-semibold">
             Guided learning
           </a>
-          <a href="/telegram/daily" className="rounded-full border px-3 py-1.5 text-xs font-semibold">
-            Daily knowledge
-          </a>
         </div>
         <div className="text-right">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-45">
-            Personal knowledge
+            Mini roadmap · Sprint 4
           </p>
-          <h1 className="font-display text-lg">Bookmarks &amp; Notes</h1>
+          <h1 className="font-display text-lg">Daily Knowledge</h1>
         </div>
       </header>
 
       {!ready ? (
         <div className="mx-auto max-w-3xl px-5 py-10">
-          <div className="h-32 animate-pulse rounded-3xl border opacity-40" />
+          <div className="h-36 animate-pulse rounded-3xl border opacity-40" />
         </div>
       ) : (
-        <KnowledgeLibrary
+        <DailyKnowledge
           authenticated={Boolean(initDataRef.current)}
           authorizedFetch={authorizedFetch}
         />

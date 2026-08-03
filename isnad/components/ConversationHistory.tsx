@@ -74,6 +74,12 @@ export default function ConversationHistory({
           <div className="flex flex-col items-end gap-2">
             <div className="flex flex-wrap justify-end gap-2">
               <a
+                href="/telegram/daily"
+                className="rounded-full border px-3 py-1.5 text-xs font-semibold"
+              >
+                Daily knowledge
+              </a>
+              <a
                 href="/telegram/learn"
                 className="rounded-full border px-3 py-1.5 text-xs font-semibold"
               >

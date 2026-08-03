@@ -27,6 +27,10 @@ const REQUIRED_TABLES = [
   "learning_lessons",
   "course_enrollments",
   "lesson_progress",
+  "daily_quran_items",
+  "daily_hadith_items",
+  "daily_vocabulary_items",
+  "daily_checkins",
 ] as const;
 
 export function databaseConfigured(): boolean {
@@ -101,7 +105,11 @@ export async function checkDatabase(): Promise<DatabaseHealth> {
         to_regclass('public.learning_modules') IS NOT NULL AS learning_modules,
         to_regclass('public.learning_lessons') IS NOT NULL AS learning_lessons,
         to_regclass('public.course_enrollments') IS NOT NULL AS course_enrollments,
-        to_regclass('public.lesson_progress') IS NOT NULL AS lesson_progress
+        to_regclass('public.lesson_progress') IS NOT NULL AS lesson_progress,
+        to_regclass('public.daily_quran_items') IS NOT NULL AS daily_quran_items,
+        to_regclass('public.daily_hadith_items') IS NOT NULL AS daily_hadith_items,
+        to_regclass('public.daily_vocabulary_items') IS NOT NULL AS daily_vocabulary_items,
+        to_regclass('public.daily_checkins') IS NOT NULL AS daily_checkins
     `;
 
     const missingTables = REQUIRED_TABLES.filter((table) => !tables?.[table]);
@@ -119,6 +127,7 @@ export async function checkDatabase(): Promise<DatabaseHealth> {
       "002_saved_conversations.sql",
       "003_bookmarks_notes.sql",
       "004_guided_learning.sql",
+      "005_daily_knowledge.sql",
     ];
 
     return {
