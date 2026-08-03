@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import AnswerMessage from "@/components/AnswerMessage";
 import ChainLoader from "@/components/ChainLoader";
+import ConversationHistory from "@/components/ConversationHistory";
 import IsnadChain from "@/components/IsnadChain";
 import type {
   CitationRecord,
@@ -71,6 +72,9 @@ export default function TelegramPage() {
   const [ready, setReady] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [historyQuery, setHistoryQuery] = useState("");
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [notice, setNotice] = useState<string>("");
@@ -98,13 +102,32 @@ export default function TelegramPage() {
     setSettings(data.settings);
   }, [authorizedFetch]);
 
-  const refreshHistory = useCallback(async () => {
-    if (!initDataRef.current) return;
-    const response = await authorizedFetch("/api/conversations");
-    if (!response.ok) return;
-    const data = (await response.json()) as { conversations: ConversationSummary[] };
-    setConversations(data.conversations);
-  }, [authorizedFetch]);
+  const refreshHistory = useCallback(
+    async (search = "") => {
+      if (!initDataRef.current) return;
+      setHistoryLoading(true);
+      setHistoryError("");
+      try {
+        const query = new URLSearchParams({ limit: "100" });
+        if (search.trim()) query.set("q", search.trim());
+        const response = await authorizedFetch(`/api/conversations?${query.toString()}`);
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          setHistoryError(
+            typeof data.error === "string" ? data.error : "Unable to load saved conversations."
+          );
+          return;
+        }
+        const data = (await response.json()) as { conversations: ConversationSummary[] };
+        setConversations(data.conversations);
+      } catch {
+        setHistoryError("Unable to load saved conversations.");
+      } finally {
+        setHistoryLoading(false);
+      }
+    },
+    [authorizedFetch]
+  );
 
   const ask = useCallback(
     async (question: string, history: Message[]) => {
@@ -156,7 +179,7 @@ export default function TelegramPage() {
             throw new Error(typeof data.error === "string" ? data.error : "Unable to answer.");
           }
         });
-        await refreshHistory();
+        await refreshHistory(historyQuery);
       } catch (error) {
         updatePending((message) => ({
           ...message,
@@ -167,7 +190,7 @@ export default function TelegramPage() {
         setLoading(false);
       }
     },
-    [authorizedFetch, conversationId, refreshHistory]
+    [authorizedFetch, conversationId, historyQuery, refreshHistory]
   );
 
   const send = useCallback(
@@ -209,6 +232,14 @@ export default function TelegramPage() {
     if (!ready) return;
     void Promise.all([refreshAccount(), refreshHistory()]);
   }, [ready, refreshAccount, refreshHistory]);
+
+  useEffect(() => {
+    if (!ready || view !== "history") return;
+    const timer = window.setTimeout(() => {
+      void refreshHistory(historyQuery);
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [historyQuery, ready, refreshHistory, view]);
 
   useEffect(() => {
     const WebApp = webAppRef.current;
@@ -255,17 +286,26 @@ export default function TelegramPage() {
     setConversationId(null);
     setView("chat");
     if (!initDataRef.current) return;
-    const response = await authorizedFetch("/api/conversations", { method: "POST" });
+    const response = await authorizedFetch("/api/conversations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
     if (response.ok) {
       const data = (await response.json()) as { conversation: ConversationSummary };
       setConversationId(data.conversation.id);
-      await refreshHistory();
+      await refreshHistory(historyQuery);
     }
   }
 
   async function openConversation(id: string) {
+    setHistoryError("");
     const response = await authorizedFetch(`/api/conversations/${id}`);
-    if (!response.ok) return;
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setHistoryError(typeof data.error === "string" ? data.error : "Unable to open conversation.");
+      return;
+    }
     const data = (await response.json()) as {
       conversation: ConversationSummary;
       messages: StoredMessage[];
@@ -273,6 +313,47 @@ export default function TelegramPage() {
     setConversationId(data.conversation.id);
     setMessages(data.messages.map(toMessage));
     setView("chat");
+  }
+
+  async function updateConversation(
+    id: string,
+    changes: { title?: string; pinned?: boolean }
+  ) {
+    setHistoryError("");
+    const response = await authorizedFetch(`/api/conversations/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(changes),
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setHistoryError(typeof data.error === "string" ? data.error : "Unable to update conversation.");
+      return;
+    }
+    await refreshHistory(historyQuery);
+  }
+
+  async function renameConversation(id: string, title: string) {
+    await updateConversation(id, { title });
+  }
+
+  async function togglePinned(conversation: ConversationSummary) {
+    await updateConversation(conversation.id, { pinned: !conversation.pinnedAt });
+  }
+
+  async function archiveConversation(id: string) {
+    setHistoryError("");
+    const response = await authorizedFetch(`/api/conversations/${id}`, { method: "DELETE" });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setHistoryError(typeof data.error === "string" ? data.error : "Unable to archive conversation.");
+      return;
+    }
+    if (conversationId === id) {
+      setConversationId(null);
+      setMessages([]);
+    }
+    await refreshHistory(historyQuery);
   }
 
   async function saveAccount() {
@@ -343,29 +424,18 @@ export default function TelegramPage() {
         )}
 
         {view === "history" && (
-          <section className="mx-auto max-w-2xl px-5 py-7">
-            <h1 className="font-display text-2xl">Conversation history</h1>
-            {!authenticated ? (
-              <EmptyAccountState />
-            ) : conversations.length === 0 ? (
-              <p className="mt-4 text-sm opacity-65">No saved conversations yet.</p>
-            ) : (
-              <div className="mt-5 space-y-2">
-                {conversations.map((conversation) => (
-                  <button
-                    key={conversation.id}
-                    onClick={() => void openConversation(conversation.id)}
-                    className="w-full rounded-2xl border px-4 py-3 text-left"
-                  >
-                    <span className="block text-sm font-semibold">{conversation.title}</span>
-                    <span className="mt-1 block text-xs opacity-55">
-                      {new Date(conversation.updatedAt).toLocaleString()}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
+          <ConversationHistory
+            authenticated={authenticated}
+            conversations={conversations}
+            query={historyQuery}
+            loading={historyLoading}
+            error={historyError}
+            onQueryChange={setHistoryQuery}
+            onOpen={openConversation}
+            onRename={renameConversation}
+            onTogglePin={togglePinned}
+            onArchive={archiveConversation}
+          />
         )}
 
         {view === "profile" && (
@@ -473,7 +543,7 @@ export default function TelegramPage() {
             onClick={() => setView(item)}
             className={`rounded-xl px-2 py-2 text-xs capitalize ${view === item ? "font-bold" : "opacity-60"}`}
           >
-            {item}
+            {item === "history" ? "saved" : item}
           </button>
         ))}
       </nav>
