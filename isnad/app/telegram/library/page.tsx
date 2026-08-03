@@ -59,6 +59,9 @@ export default function TelegramLibraryPage() {
           <a href="/telegram/learn" className="rounded-full border px-3 py-1.5 text-xs font-semibold">
             Guided learning
           </a>
+          <a href="/telegram/daily" className="rounded-full border px-3 py-1.5 text-xs font-semibold">
+            Daily knowledge
+          </a>
         </div>
         <div className="text-right">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-45">
