@@ -36,6 +36,19 @@ function mapSettings(row: Record<string, unknown> | undefined): UserSettings {
   };
 }
 
+function mapConversation(row: Record<string, unknown>): ConversationSummary {
+  return {
+    id: row.id as string,
+    channel: row.channel as ConversationChannel,
+    title: row.title as string,
+    pinnedAt: row.pinned_at
+      ? new Date(row.pinned_at as string | Date).toISOString()
+      : undefined,
+    createdAt: new Date(row.created_at as string | Date).toISOString(),
+    updatedAt: new Date(row.updated_at as string | Date).toISOString(),
+  };
+}
+
 export async function upsertTelegramIdentity(identity: TelegramIdentityInput): Promise<string | null> {
   if (!databaseConfigured()) return null;
   const sql = getDatabase();
@@ -168,15 +181,9 @@ export async function createConversation(
   const [row] = await sql`
     INSERT INTO conversations (user_id, channel, title)
     VALUES (${userId}, ${channel}, ${title.slice(0, 120)})
-    RETURNING id::text AS id, channel, title, created_at, updated_at
+    RETURNING id::text AS id, channel, title, pinned_at, created_at, updated_at
   `;
-  return {
-    id: row.id as string,
-    channel: row.channel as ConversationChannel,
-    title: row.title as string,
-    createdAt: new Date(row.created_at as string | Date).toISOString(),
-    updatedAt: new Date(row.updated_at as string | Date).toISOString(),
-  };
+  return mapConversation(row);
 }
 
 export async function getOrCreateConversation(
@@ -185,36 +192,97 @@ export async function getOrCreateConversation(
 ): Promise<ConversationSummary> {
   const sql = getDatabase();
   const [row] = await sql`
-    SELECT id::text AS id, channel, title, created_at, updated_at
+    SELECT id::text AS id, channel, title, pinned_at, created_at, updated_at
     FROM conversations
     WHERE user_id = ${userId} AND channel = ${channel} AND archived_at IS NULL
     ORDER BY updated_at DESC LIMIT 1
   `;
   if (!row) return createConversation(userId, channel);
-  return {
-    id: row.id as string,
-    channel: row.channel as ConversationChannel,
-    title: row.title as string,
-    createdAt: new Date(row.created_at as string | Date).toISOString(),
-    updatedAt: new Date(row.updated_at as string | Date).toISOString(),
-  };
+  return mapConversation(row);
 }
 
-export async function listConversations(userId: string, limit = 30): Promise<ConversationSummary[]> {
+export async function listConversations(
+  userId: string,
+  limit = 30,
+  search = ""
+): Promise<ConversationSummary[]> {
   const sql = getDatabase();
-  const rows = await sql`
-    SELECT id::text AS id, channel, title, created_at, updated_at
+  const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 100);
+  const normalizedSearch = search.trim().slice(0, 120);
+
+  const rows = normalizedSearch
+    ? await sql`
+        SELECT c.id::text AS id, c.channel, c.title, c.pinned_at, c.created_at, c.updated_at
+        FROM conversations c
+        WHERE c.user_id = ${userId}
+          AND c.archived_at IS NULL
+          AND (
+            c.title ILIKE ${`%${normalizedSearch}%`}
+            OR EXISTS (
+              SELECT 1
+              FROM messages m
+              WHERE m.conversation_id = c.id
+                AND m.content ILIKE ${`%${normalizedSearch}%`}
+            )
+          )
+        ORDER BY c.pinned_at DESC NULLS LAST, c.updated_at DESC
+        LIMIT ${safeLimit}
+      `
+    : await sql`
+        SELECT c.id::text AS id, c.channel, c.title, c.pinned_at, c.created_at, c.updated_at
+        FROM conversations c
+        WHERE c.user_id = ${userId} AND c.archived_at IS NULL
+        ORDER BY c.pinned_at DESC NULLS LAST, c.updated_at DESC
+        LIMIT ${safeLimit}
+      `;
+
+  return rows.map(mapConversation);
+}
+
+export async function getConversation(
+  userId: string,
+  conversationId: string
+): Promise<ConversationSummary | null> {
+  const sql = getDatabase();
+  const [row] = await sql`
+    SELECT id::text AS id, channel, title, pinned_at, created_at, updated_at
     FROM conversations
-    WHERE user_id = ${userId} AND archived_at IS NULL
-    ORDER BY updated_at DESC LIMIT ${limit}
+    WHERE id = ${conversationId} AND user_id = ${userId} AND archived_at IS NULL
   `;
-  return rows.map((row) => ({
-    id: row.id as string,
-    channel: row.channel as ConversationChannel,
-    title: row.title as string,
-    createdAt: new Date(row.created_at as string | Date).toISOString(),
-    updatedAt: new Date(row.updated_at as string | Date).toISOString(),
-  }));
+  return row ? mapConversation(row) : null;
+}
+
+export async function renameConversation(
+  userId: string,
+  conversationId: string,
+  title: string
+): Promise<ConversationSummary | null> {
+  const normalizedTitle = title.trim().replace(/\s+/g, " ").slice(0, 120);
+  if (!normalizedTitle) return null;
+
+  const sql = getDatabase();
+  const [row] = await sql`
+    UPDATE conversations
+    SET title = ${normalizedTitle}, updated_at = now()
+    WHERE id = ${conversationId} AND user_id = ${userId} AND archived_at IS NULL
+    RETURNING id::text AS id, channel, title, pinned_at, created_at, updated_at
+  `;
+  return row ? mapConversation(row) : null;
+}
+
+export async function setConversationPinned(
+  userId: string,
+  conversationId: string,
+  pinned: boolean
+): Promise<ConversationSummary | null> {
+  const sql = getDatabase();
+  const [row] = await sql`
+    UPDATE conversations
+    SET pinned_at = ${pinned ? sql`now()` : null}, updated_at = now()
+    WHERE id = ${conversationId} AND user_id = ${userId} AND archived_at IS NULL
+    RETURNING id::text AS id, channel, title, pinned_at, created_at, updated_at
+  `;
+  return row ? mapConversation(row) : null;
 }
 
 export async function getConversationMessages(
