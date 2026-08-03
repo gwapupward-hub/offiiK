@@ -50,6 +50,7 @@ export type ConversationSummary = {
   id: string;
   channel: ConversationChannel;
   title: string;
+  pinnedAt?: string;
   createdAt: string;
   updatedAt: string;
 };
