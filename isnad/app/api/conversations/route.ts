@@ -20,8 +20,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Conversation history is unavailable." }, { status: 503 });
   }
 
-  const conversations = await listConversations(session.userId);
-  return NextResponse.json({ conversations });
+  const search = request.nextUrl.searchParams.get("q") ?? "";
+  const requestedLimit = Number(request.nextUrl.searchParams.get("limit") ?? 50);
+  const limit = Number.isFinite(requestedLimit)
+    ? Math.min(Math.max(Math.trunc(requestedLimit), 1), 100)
+    : 50;
+  const conversations = await listConversations(session.userId, limit, search);
+  return NextResponse.json({ conversations, query: search.trim().slice(0, 120) });
 }
 
 export async function POST(request: NextRequest) {
@@ -36,7 +41,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Conversation history is unavailable." }, { status: 503 });
   }
 
-  const conversation = await createConversation(session.userId, "mini_app");
+  const body = (await request.json().catch(() => ({}))) as { title?: unknown };
+  const title = typeof body.title === "string" && body.title.trim()
+    ? body.title.trim().slice(0, 120)
+    : "New conversation";
+  const conversation = await createConversation(session.userId, "mini_app", title);
   await recordEvent("conversation_created", session.userId, { channel: "mini_app" });
   return NextResponse.json({ conversation }, { status: 201 });
 }
