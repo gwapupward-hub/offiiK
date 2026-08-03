@@ -46,15 +46,20 @@ export default function TelegramLearningPage() {
       }}
     >
       <header
-        className="sticky top-0 z-20 flex items-center justify-between px-5 py-4"
+        className="sticky top-0 z-20 flex items-center justify-between gap-3 px-5 py-4"
         style={{
           background: "var(--tg-theme-bg-color, var(--parchment))",
           borderBottom: "1px solid var(--tg-theme-hint-color, rgba(18,56,50,0.1))",
         }}
       >
-        <a href="/telegram" className="rounded-full border px-3 py-1.5 text-xs font-semibold">
-          Back to Isnad
-        </a>
+        <div className="flex flex-wrap gap-2">
+          <a href="/telegram" className="rounded-full border px-3 py-1.5 text-xs font-semibold">
+            Back to Isnad
+          </a>
+          <a href="/telegram/daily" className="rounded-full border px-3 py-1.5 text-xs font-semibold">
+            Daily knowledge
+          </a>
+        </div>
         <div className="text-right">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-45">
             Mini roadmap · Sprint 3
