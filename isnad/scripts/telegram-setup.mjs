@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** Idempotent production setup for @the_isnad_bot. */
+import { SITE_URL } from "../site.config.mjs";
 
 const args = process.argv.slice(2);
 const vercelBuild = args.includes("--vercel-build");
@@ -22,7 +23,7 @@ function normalizeHttpsUrl(value) {
 }
 
 const baseUrl = normalizeHttpsUrl(
-  positionalBaseUrl || process.env.PUBLIC_BASE_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL
+  positionalBaseUrl || process.env.PUBLIC_BASE_URL || SITE_URL
 );
 
 const commands = [

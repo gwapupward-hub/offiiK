@@ -4,7 +4,9 @@
 
 Isnad is a modular Islamic knowledge assistant built with Next.js and OpenAI. It answers questions through an evidence hierarchy—Qur’an, authentic Sunnah, the understanding of the Companions, and recognized Sunni scholarship—while making scholarly disagreement and uncertainty visible.
 
-[Open the live app](https://isnadsunnah.vercel.app/) · [Launch the Telegram experience](https://isnadsunnah.vercel.app/telegram)
+[Open the live app](https://www.isnadsunnah.site/) · [Launch the Telegram experience](https://www.isnadsunnah.site/telegram)
+
+The public domain is `isnadsunnah.site`. Vercel redirects it to the primary hostname, `www.isnadsunnah.site`. See the [domain configuration](isnad/docs/domains.md) for the Vercel aliases and Telegram URLs.
 
 > Isnad provides educational guidance, not binding fatwas. High-stakes matters such as divorce, inheritance, apostasy rulings, medical decisions, and immediate safety concerns should be taken to an appropriately qualified local authority.
 
@@ -103,6 +105,8 @@ Open [http://localhost:3000](http://localhost:3000).
 | `OPENAI_MODEL` | No | Overrides the default OpenAI model without a code change |
 | `TELEGRAM_BOT_TOKEN` | For Telegram | Validates Mini App sessions and powers the bot |
 | `TELEGRAM_WEBHOOK_SECRET` | For the bot webhook | Verifies that webhook requests came through Telegram |
+| `PUBLIC_BASE_URL` | For Telegram setup | `https://www.isnadsunnah.site` |
+| `TELEGRAM_MINI_APP_URL` | For the Mini App menu | `https://www.isnadsunnah.site/telegram` |
 
 Never commit `.env.local` or expose these values to browser code.
 
@@ -121,14 +125,15 @@ Run commands from `isnad/`.
 ## Telegram setup
 
 1. Create a bot with [@BotFather](https://t.me/BotFather) and save the token.
-2. Register `https://<your-domain>/telegram` as the Mini App URL.
+2. Register `https://www.isnadsunnah.site/telegram` as the Mini App URL for `@the_isnad_bot/askiik` in BotFather.
 3. Add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET` to the deployment environment.
 4. Register the bot configuration:
 
 ```bash
 TELEGRAM_BOT_TOKEN=<bot-token> \
 TELEGRAM_WEBHOOK_SECRET=<strong-random-secret> \
-npm run telegram:setup -- https://<your-domain>
+TELEGRAM_MINI_APP_URL=https://www.isnadsunnah.site/telegram \
+npm run telegram:setup -- https://www.isnadsunnah.site
 ```
 
 The setup script is idempotent, so it can be rerun after changing the domain, commands, or webhook secret.
