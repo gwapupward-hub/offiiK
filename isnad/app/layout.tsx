@@ -1,9 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { SITE_URL } from "@/site.config.mjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://isnadsunnah.vercel.app"),
+  metadataBase: new URL(SITE_URL),
+  alternates: {
+    canonical: "./",
+  },
   title: {
     default: "Isnad — Islamic knowledge traced to its source",
     template: "%s | Isnad",
@@ -23,7 +27,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   openGraph: {
     type: "website",
-    url: "/",
+    url: "./",
     siteName: "Isnad",
     title: "Isnad — Islamic knowledge traced to its source",
     description:

@@ -2,6 +2,8 @@
 
 Isnad is a Next.js Islamic AI assistant for the web, Telegram bot, and Telegram Mini App. Every answer is governed by the Islamic Teacher Core and may route to specialist modules without allowing an add-on to override the Core.
 
+Production: [www.isnadsunnah.site](https://www.isnadsunnah.site). The apex `isnadsunnah.site` redirects there. See [domain configuration](docs/domains.md) for deployment and Telegram settings.
+
 ## Knowledge hierarchy
 
 - `knowledge/core.md` — Islamic Teacher Core: Qur'an, authentic Sunnah, the Companions, and recognized scholarship.
@@ -93,8 +95,8 @@ After deploying to an HTTPS domain, register the webhook, command menu, and Mini
 ```bash
 TELEGRAM_BOT_TOKEN=<secured-token> \
 TELEGRAM_WEBHOOK_SECRET=<secured-random-secret> \
-TELEGRAM_MINI_APP_URL=https://your-domain.example/telegram \
-npm run telegram:setup -- https://your-domain.example
+TELEGRAM_MINI_APP_URL=https://www.isnadsunnah.site/telegram \
+npm run telegram:setup -- https://www.isnadsunnah.site
 ```
 
 Never commit bot tokens, webhook secrets, OpenAI keys, or database credentials.
@@ -128,7 +130,7 @@ Content-only changes can be made directly in `knowledge/*.md`. Routing lives in 
 2. Configure encrypted environment variables.
 3. Run `npm run db:migrate`.
 4. Deploy the Next.js application.
-5. Run `npm run telegram:setup -- https://your-domain.example`.
+5. Run `npm run telegram:setup -- https://www.isnadsunnah.site`.
 6. Verify `/api/health`, web streaming, Mini App authentication, bot commands, history, settings, and source recall.
 
 ## License
