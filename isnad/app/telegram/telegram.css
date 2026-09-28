@@ -167,7 +167,7 @@
   background: var(--tg-surface-grouped);
   color: var(--tg-text);
   cursor: pointer;
-  transition: transform 160ms ease, opacity 160ms ease;
+  transition: transform 90ms ease, opacity 90ms ease;
 }
 
 .telegram-icon-button svg,
@@ -329,7 +329,7 @@
   flex: 0 0 48px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--tg-text-muted) 24%, var(--tg-surface));
-  transition: background 160ms ease;
+  transition: background 90ms ease;
 }
 
 .telegram-switch::after {
@@ -342,7 +342,7 @@
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
-  transition: transform 160ms ease;
+  transition: transform 90ms ease;
 }
 
 .telegram-switch-input:checked + .telegram-switch {
@@ -375,7 +375,7 @@
   color: var(--tg-action-text);
   font-weight: 700;
   cursor: pointer;
-  transition: transform 160ms ease, opacity 160ms ease;
+  transition: transform 90ms ease, opacity 90ms ease;
 }
 
 .telegram-primary-button {
@@ -452,7 +452,7 @@
   text-align: left;
   color: var(--tg-text);
   cursor: pointer;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+  transition: transform 90ms ease, border-color 90ms ease, background 90ms ease;
 }
 
 .telegram-starter-label {
@@ -616,7 +616,7 @@
   cursor: pointer;
   font-size: 10px;
   font-weight: 650;
-  transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+  transition: transform 90ms ease, background 90ms ease, color 90ms ease;
 }
 
 .telegram-tab svg {
@@ -666,7 +666,7 @@
   text-decoration: none;
   font-size: 11px;
   font-weight: 700;
-  transition: transform 160ms ease, opacity 160ms ease;
+  transition: transform 90ms ease, opacity 90ms ease;
 }
 
 .telegram-skeleton-card {
@@ -837,7 +837,7 @@
 }
 
 .telegram-tabbar {
-  transition: transform 180ms ease, opacity 180ms ease;
+  transition: transform 110ms ease, opacity 110ms ease;
 }
 
 .telegram-stream-status {
@@ -911,5 +911,127 @@
   .telegram-stream-dot,
   .telegram-send-spinner {
     animation: none;
+  }
+}
+
+
+/* Fullscreen is a distinct Telegram layout state, not just a taller normal view. */
+.telegram-main[data-fullscreen="true"] .telegram-topbar,
+.telegram-main[data-fullscreen="true"] .telegram-section-topbar {
+  min-height: calc(48px + var(--tg-safe-top));
+  gap: 8px;
+  padding:
+    calc(4px + var(--tg-safe-top))
+    calc(12px + var(--tg-safe-right))
+    6px
+    calc(12px + var(--tg-safe-left));
+  background: color-mix(in srgb, var(--tg-surface) 97%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-brand,
+.telegram-main[data-fullscreen="true"] .telegram-section-title {
+  gap: 8px;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-brand-mark {
+  width: 32px;
+  height: 32px;
+  flex-basis: 32px;
+  border-radius: 10px;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-brand-mark .star-8 {
+  width: 12px;
+  height: 12px;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-eyebrow {
+  display: none;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-brand-name,
+.telegram-main[data-fullscreen="true"] .telegram-section-name {
+  font-size: 16px;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-view-chip {
+  display: none;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-icon-button {
+  width: 36px;
+  height: 36px;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-route-pills {
+  max-width: 58%;
+  gap: 5px;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-route-pill {
+  min-height: 32px;
+  padding-inline: 10px;
+  font-size: 10px;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-empty-chat {
+  padding-top: 20px;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-screen {
+  padding-top: 18px;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-density-shell {
+  padding-top: 12px;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-thread {
+  padding-top: 12px;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-composer-note {
+  display: none;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-composer {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-scroll-region[data-chat="true"] {
+  padding-bottom: calc(132px + var(--tg-safe-bottom));
+  scroll-padding-bottom: calc(144px + var(--tg-safe-bottom));
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-tabbar {
+  min-height: calc(54px + var(--tg-safe-bottom));
+  padding-top: 3px;
+}
+
+.telegram-main[data-fullscreen="true"] .telegram-tab {
+  min-height: 44px;
+}
+
+@media (orientation: landscape) {
+  .telegram-main[data-fullscreen="true"] .telegram-topbar,
+  .telegram-main[data-fullscreen="true"] .telegram-section-topbar {
+    min-height: calc(44px + var(--tg-safe-top));
+    padding-top: calc(2px + var(--tg-safe-top));
+    padding-bottom: 4px;
+  }
+
+  .telegram-main[data-fullscreen="true"] .telegram-empty-chat {
+    padding-top: 12px;
+  }
+
+  .telegram-main[data-fullscreen="true"] .telegram-chain-wrap {
+    margin-bottom: 10px;
+  }
+
+  .telegram-main[data-fullscreen="true"] .telegram-empty-chat h1 {
+    font-size: 25px;
   }
 }
