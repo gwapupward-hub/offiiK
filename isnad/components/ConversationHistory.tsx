@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { ConversationSummary } from "@/lib/appTypes";
 
 type ConversationHistoryProps = {
@@ -73,24 +74,27 @@ export default function ConversationHistory({
         {authenticated && (
           <div className="mt-3">
             <div className="telegram-route-pills">
-              <a
+              <Link
                 href="/telegram/daily"
+                prefetch
                 className="telegram-route-pill"
               >
                 Daily knowledge
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/telegram/learn"
+                prefetch
                 className="telegram-route-pill"
               >
                 Guided learning
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/telegram/library"
+                prefetch
                 className="telegram-route-pill"
               >
                 Bookmarks &amp; notes
-              </a>
+              </Link>
             </div>
             <span className="telegram-account-meta mt-2 block">
               {conversations.length} {conversations.length === 1 ? "chat" : "chats"}
