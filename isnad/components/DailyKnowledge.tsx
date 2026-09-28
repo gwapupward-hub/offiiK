@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import type {
   DailyDashboard,
   DailyProgress,
@@ -237,12 +238,12 @@ export default function DailyKnowledge({
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        <a href="/telegram/learn" className="telegram-route-pill">
+        <Link href="/telegram/learn" prefetch className="telegram-route-pill">
           Continue guided learning
-        </a>
-        <a href="/telegram/library" className="telegram-route-pill">
+        </Link>
+        <Link href="/telegram/library" prefetch className="telegram-route-pill">
           Open bookmarks &amp; notes
-        </a>
+        </Link>
       </div>
 
       <p className="mt-5 text-xs leading-relaxed opacity-50">
