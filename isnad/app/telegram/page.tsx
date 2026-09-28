@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import AnswerMessage from "@/components/AnswerMessage";
 import ChainLoader from "@/components/ChainLoader";
 import ConversationHistory from "@/components/ConversationHistory";
@@ -13,7 +14,7 @@ import type {
   UserSettings,
 } from "@/lib/appTypes";
 import { consumeEventStream } from "@/lib/sseClient";
-import { bindTelegramViewport } from "@/lib/telegramMiniApp";
+import { bindTelegramChromeState, bindTelegramViewport } from "@/lib/telegramMiniApp";
 
 type View = "chat" | "history" | "profile" | "settings";
 type WebAppSdk = (typeof import("@twa-dev/sdk"))["default"];
@@ -88,6 +89,7 @@ function toMessage(message: StoredMessage): Message {
 }
 
 export default function TelegramPage() {
+  const router = useRouter();
   const [view, setView] = useState<View>("chat");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -245,6 +247,7 @@ export default function TelegramPage() {
     let app: WebAppSdk | null = null;
     let themeHandler: (() => void) | null = null;
     let rootBackHandler: (() => void) | null = null;
+    let chromeCleanup: (() => void) | null = null;
 
     import("@twa-dev/sdk")
       .then(({ default: WebApp }) => {
@@ -266,6 +269,12 @@ export default function TelegramPage() {
         WebApp.BackButton.onClick(rootBackHandler);
         webAppRef.current = WebApp;
         initDataRef.current = WebApp.initData ?? "";
+        if (containerRef.current) {
+          chromeCleanup = bindTelegramChromeState(
+            containerRef.current,
+            WebApp as Parameters<typeof bindTelegramChromeState>[1]
+          );
+        }
 
         const syncTheme = () => applyThemeParams(containerRef.current, WebApp.themeParams);
         themeHandler = syncTheme;
@@ -279,6 +288,7 @@ export default function TelegramPage() {
       cancelled = true;
       if (app && themeHandler) app.offEvent("themeChanged", themeHandler);
       if (app && rootBackHandler) app.BackButton.offClick(rootBackHandler);
+      chromeCleanup?.();
       app?.MainButton.hide();
       app?.BackButton.hide();
     };
@@ -286,8 +296,11 @@ export default function TelegramPage() {
 
   useEffect(() => {
     if (!ready) return;
+    router.prefetch("/telegram/daily");
+    router.prefetch("/telegram/learn");
+    router.prefetch("/telegram/library");
     void Promise.all([refreshAccount(), refreshHistory()]);
-  }, [ready, refreshAccount, refreshHistory]);
+  }, [ready, refreshAccount, refreshHistory, router]);
 
   useEffect(() => {
     if (!ready || view !== "history") return;
