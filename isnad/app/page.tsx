@@ -519,6 +519,7 @@ export default function Home() {
             <a href="#method" className="hover:text-white">Method</a>
             <a href={telegramMiniAppUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white">Mini App</a>
             <a href="https://github.com/gwapupward-hub/offiiK" target="_blank" rel="noopener noreferrer" className="hover:text-white">GitHub</a>
+            <Link href="/privacy" className="hover:text-white">Privacy</Link>
           </div>
         </div>
         <div className="border-t border-white/[0.06] px-5 py-5 text-center text-[11px] text-white/25">
