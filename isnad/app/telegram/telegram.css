@@ -36,7 +36,7 @@
 
   position: relative;
   width: 100%;
-  height: var(--tg-viewport-height, 100dvh);
+  height: var(--tg-live-height, var(--tg-viewport-height, 100dvh));
   min-height: 0;
   overflow: hidden;
   color: var(--tg-text);
@@ -61,7 +61,7 @@
   position: relative;
   display: flex;
   width: 100%;
-  height: var(--tg-viewport-height, 100dvh);
+  height: var(--tg-live-height, var(--tg-viewport-height, 100dvh));
   min-height: 0;
   flex-direction: column;
   overflow: hidden;
@@ -816,4 +816,100 @@
 
 .telegram-clamp-4 {
   -webkit-line-clamp: 4;
+}
+
+
+/* Interaction polish: keyboard, streaming, and long-answer controls. */
+.telegram-main[data-keyboard-open="true"] .telegram-tabbar {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.telegram-main[data-keyboard-open="true"] .telegram-composer {
+  bottom: 0;
+  padding-bottom: max(8px, var(--tg-safe-bottom));
+}
+
+.telegram-main[data-keyboard-open="true"] .telegram-scroll-region[data-chat="true"] {
+  padding-bottom: calc(92px + var(--tg-safe-bottom));
+  scroll-padding-bottom: calc(104px + var(--tg-safe-bottom));
+}
+
+.telegram-tabbar {
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.telegram-stream-status {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  border-radius: 999px;
+  background: var(--tg-surface-grouped);
+  padding: 5px 9px;
+  color: var(--tg-text-muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.telegram-stream-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tg-action);
+  animation: telegram-pulse-dot 1s ease-in-out infinite;
+}
+
+.telegram-send-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid color-mix(in srgb, var(--tg-action-text) 35%, transparent);
+  border-top-color: var(--tg-action-text);
+  border-radius: 50%;
+  animation: telegram-spin 700ms linear infinite;
+}
+
+.telegram-answer-body {
+  position: relative;
+}
+
+.telegram-answer-body-collapsed {
+  max-height: 320px;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 76%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 76%, transparent 100%);
+}
+
+.telegram-answer-toggle {
+  min-height: 40px;
+  margin-top: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--tg-link);
+  padding: 4px 0;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+@keyframes telegram-pulse-dot {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes telegram-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .telegram-tabbar {
+    transition: none;
+  }
+
+  .telegram-stream-dot,
+  .telegram-send-spinner {
+    animation: none;
+  }
 }

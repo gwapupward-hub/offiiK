@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { parseAnswer } from "@/lib/parseAnswer";
@@ -17,6 +17,7 @@ export default function AnswerMessage({
   routedToAqidah,
   routedToArabic,
   routedToDawahTarbiyah,
+  streaming = false,
 }: {
   content: string;
   routedToFinance?: boolean;
@@ -27,9 +28,19 @@ export default function AnswerMessage({
   routedToAqidah?: boolean;
   routedToArabic?: boolean;
   routedToDawahTarbiyah?: boolean;
+  streaming?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
+  const [expanded, setExpanded] = useState(streaming);
   const { lead, tiers, certainty, structured } = parseAnswer(content);
+
+  useEffect(() => {
+    if (streaming) setExpanded(true);
+  }, [streaming]);
+
+  const longAnswer = lead.length > 1400;
+  const canCollapse = longAnswer && !streaming;
+  const collapsed = canCollapse && !expanded;
 
   async function copy() {
     try {
@@ -106,9 +117,22 @@ export default function AnswerMessage({
           </div>
         )}
 
-        <div className="prose prose-sm max-w-none prose-headings:font-display prose-headings:font-medium prose-headings:text-[var(--tg-text)] prose-h3:mb-1.5 prose-h3:mt-4 prose-h3:text-base prose-p:my-2 prose-p:leading-relaxed prose-p:text-[var(--tg-text)] prose-strong:text-[var(--tg-text)] prose-li:text-[var(--tg-text)]">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{lead}</ReactMarkdown>
+        <div className={collapsed ? "telegram-answer-body telegram-answer-body-collapsed" : "telegram-answer-body"}>
+          <div className="prose prose-sm max-w-none prose-headings:font-display prose-headings:font-medium prose-headings:text-[var(--tg-text)] prose-h3:mb-1.5 prose-h3:mt-4 prose-h3:text-base prose-p:my-2 prose-p:leading-relaxed prose-p:text-[var(--tg-text)] prose-strong:text-[var(--tg-text)] prose-li:text-[var(--tg-text)]">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{lead}</ReactMarkdown>
+          </div>
         </div>
+
+        {canCollapse && (
+          <button
+            type="button"
+            className="telegram-answer-toggle"
+            aria-expanded={!collapsed}
+            onClick={() => setExpanded((current) => !current)}
+          >
+            {collapsed ? "Show full answer" : "Show less"}
+          </button>
+        )}
 
         {structured && <SourceChain tiers={tiers} certainty={certainty} />}
       </article>

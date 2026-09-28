@@ -13,6 +13,7 @@ import type {
   UserSettings,
 } from "@/lib/appTypes";
 import { consumeEventStream } from "@/lib/sseClient";
+import { bindTelegramViewport } from "@/lib/telegramMiniApp";
 
 type View = "chat" | "history" | "profile" | "settings";
 type WebAppSdk = (typeof import("@twa-dev/sdk"))["default"];
@@ -234,9 +235,16 @@ export default function TelegramPage() {
   }, [send]);
 
   useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+    return bindTelegramViewport(element);
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     let app: WebAppSdk | null = null;
     let themeHandler: (() => void) | null = null;
+    let rootBackHandler: (() => void) | null = null;
 
     import("@twa-dev/sdk")
       .then(({ default: WebApp }) => {
@@ -246,6 +254,16 @@ export default function TelegramPage() {
         WebApp.expand();
         WebApp.BackButton.hide();
         WebApp.MainButton.hide();
+        rootBackHandler = () => {
+          shouldAutoScrollRef.current = true;
+          setNotice("");
+          setView("chat");
+          WebApp.BackButton.hide();
+          window.requestAnimationFrame(() => {
+            scrollRegionRef.current?.scrollTo({ top: 0, behavior: "auto" });
+          });
+        };
+        WebApp.BackButton.onClick(rootBackHandler);
         webAppRef.current = WebApp;
         initDataRef.current = WebApp.initData ?? "";
 
@@ -260,6 +278,7 @@ export default function TelegramPage() {
     return () => {
       cancelled = true;
       if (app && themeHandler) app.offEvent("themeChanged", themeHandler);
+      if (app && rootBackHandler) app.BackButton.offClick(rootBackHandler);
       app?.MainButton.hide();
       app?.BackButton.hide();
     };
@@ -290,10 +309,15 @@ export default function TelegramPage() {
   }, [settings]);
 
   function selectView(nextView: View) {
-    webAppRef.current?.HapticFeedback.selectionChanged();
+    const app = webAppRef.current;
+    app?.HapticFeedback.selectionChanged();
     setNotice("");
     setView(nextView);
     shouldAutoScrollRef.current = nextView === "chat";
+
+    if (nextView === "chat") app?.BackButton.hide();
+    else app?.BackButton.show();
+
     window.requestAnimationFrame(() => {
       scrollRegionRef.current?.scrollTo({ top: 0, behavior: "auto" });
     });
@@ -312,6 +336,7 @@ export default function TelegramPage() {
     setMessages([]);
     setConversationId(null);
     setView("chat");
+    webAppRef.current?.BackButton.hide();
     if (!initDataRef.current) return;
     const response = await authorizedFetch("/api/conversations", {
       method: "POST",
@@ -341,6 +366,7 @@ export default function TelegramPage() {
     setConversationId(data.conversation.id);
     setMessages(data.messages.map(toMessage));
     setView("chat");
+    webAppRef.current?.BackButton.hide();
   }
 
   async function updateConversation(
@@ -398,6 +424,7 @@ export default function TelegramPage() {
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
       setNotice(typeof data.error === "string" ? data.error : "Unable to save changes.");
+      webAppRef.current?.HapticFeedback.notificationOccurred("error");
       return;
     }
     const data = (await response.json()) as {
@@ -407,6 +434,7 @@ export default function TelegramPage() {
     setProfile(data.profile);
     setSettings(data.settings);
     setNotice("Saved.");
+    webAppRef.current?.HapticFeedback.notificationOccurred("success");
   }
 
   const authenticated = Boolean(initDataRef.current);
@@ -639,6 +667,15 @@ function ChatView({
   awaitingFirstToken: boolean;
   scrollRef: React.RefObject<HTMLDivElement | null>;
 }) {
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const element = inputRef.current;
+    if (!element) return;
+    element.style.height = "44px";
+    element.style.height = `${Math.min(element.scrollHeight, 132)}px`;
+  }, [input]);
+
   return (
     <>
       {!hasStarted ? (
@@ -677,6 +714,7 @@ function ChatView({
                 ) : (
                   <AnswerMessage
                     content={message.content}
+                    streaming={loading && index === messages.length - 1}
                     routedToFinance={message.routedToFinance}
                     routedToTafsir={message.routedToTafsir}
                     routedToHadith={message.routedToHadith}
@@ -691,6 +729,12 @@ function ChatView({
             ) : null
           )}
           {awaitingFirstToken && <ChainLoader />}
+          {loading && !awaitingFirstToken && (
+            <div className="telegram-stream-status" role="status" aria-live="polite">
+              <span className="telegram-stream-dot" aria-hidden="true" />
+              <span>Building sourced answer…</span>
+            </div>
+          )}
           <div ref={scrollRef} />
         </div>
       )}
@@ -704,6 +748,7 @@ function ChatView({
           className="telegram-composer-form"
         >
           <textarea
+            ref={inputRef}
             value={input}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={(event) => {
@@ -713,6 +758,11 @@ function ChatView({
               }
             }}
             rows={1}
+            onFocus={() => {
+              window.setTimeout(() => {
+                scrollRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+              }, 180);
+            }}
             placeholder="Ask Isnad…"
             aria-label="Ask Isnad"
             className="telegram-composer-input"
@@ -723,7 +773,7 @@ function ChatView({
             className="telegram-send-button"
             aria-label={loading ? "Isnad is answering" : "Send question"}
           >
-            <NavIcon name="send" />
+            {loading ? <span className="telegram-send-spinner" aria-hidden="true" /> : <NavIcon name="send" />}
           </button>
         </form>
         <p className="telegram-composer-note">

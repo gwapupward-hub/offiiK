@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import GuidedLearning from "@/components/GuidedLearning";
+import { bindTelegramViewport, navigateBackInsideTelegram } from "@/lib/telegramMiniApp";
 
 type WebAppSdk = (typeof import("@twa-dev/sdk"))["default"];
 
@@ -17,11 +18,17 @@ export default function TelegramLearningPage() {
   }, []);
 
   useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+    return bindTelegramViewport(element);
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     let app: WebAppSdk | null = null;
     let themeHandler: (() => void) | null = null;
     const goBack = () => {
-      window.location.assign("/telegram");
+      navigateBackInsideTelegram();
     };
 
     import("@twa-dev/sdk")
