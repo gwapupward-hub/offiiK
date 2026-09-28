@@ -18,69 +18,72 @@ export default function TelegramLibraryPage() {
 
   useEffect(() => {
     let cancelled = false;
+    let app: WebAppSdk | null = null;
+    let themeHandler: (() => void) | null = null;
+    const goBack = () => {
+      window.location.assign("/telegram");
+    };
+
     import("@twa-dev/sdk")
-      .then(({ default: WebApp }) => {
+      .then(({ default: WebApp }: { default: WebAppSdk }) => {
         if (cancelled) return;
+        app = WebApp;
         WebApp.ready();
         WebApp.expand();
+        WebApp.MainButton.hide();
+        WebApp.BackButton.show();
+        WebApp.BackButton.onClick(goBack);
         initDataRef.current = WebApp.initData ?? "";
-        applyThemeParams(containerRef.current, WebApp.themeParams);
-        WebApp.onEvent("themeChanged", () =>
-          applyThemeParams(containerRef.current, WebApp.themeParams)
-        );
+
+        const syncTheme = () => applyThemeParams(containerRef.current, WebApp.themeParams);
+        themeHandler = syncTheme;
+        syncTheme();
+        WebApp.onEvent("themeChanged", syncTheme);
         setReady(true);
       })
       .catch(() => setReady(true));
+
     return () => {
       cancelled = true;
+      if (app && themeHandler) app.offEvent("themeChanged", themeHandler);
+      app?.BackButton.offClick(goBack);
+      app?.BackButton.hide();
     };
   }, []);
 
   return (
-    <main
-      ref={containerRef}
-      className="min-h-screen flex-1 pb-10"
-      style={{
-        background: "var(--tg-theme-bg-color, var(--parchment))",
-        color: "var(--tg-theme-text-color, var(--ink))",
-      }}
-    >
-      <header
-        className="sticky top-0 z-20 flex items-center justify-between gap-3 px-5 py-4"
-        style={{
-          background: "var(--tg-theme-bg-color, var(--parchment))",
-          borderBottom: "1px solid var(--tg-theme-hint-color, rgba(18,56,50,0.1))",
-        }}
-      >
-        <div className="flex flex-wrap gap-2">
-          <a href="/telegram" className="rounded-full border px-3 py-1.5 text-xs font-semibold">
-            Back to Isnad
-          </a>
-          <a href="/telegram/learn" className="rounded-full border px-3 py-1.5 text-xs font-semibold">
-            Guided learning
-          </a>
-          <a href="/telegram/daily" className="rounded-full border px-3 py-1.5 text-xs font-semibold">
-            Daily knowledge
-          </a>
+    <main ref={containerRef} className="telegram-main">
+      <header className="telegram-section-topbar">
+        <div className="telegram-section-title">
+          <span className="telegram-brand-mark" aria-hidden="true">
+            <span className="star-8" />
+          </span>
+          <div className="min-w-0">
+            <p className="telegram-eyebrow">Personal knowledge</p>
+            <h1 className="telegram-section-name">Bookmarks & Notes</h1>
+          </div>
         </div>
-        <div className="text-right">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-45">
-            Personal knowledge
-          </p>
-          <h1 className="font-display text-lg">Bookmarks &amp; Notes</h1>
+
+        <div className="telegram-route-pills" aria-label="Related sections">
+            <a href="/telegram/daily" className="telegram-route-pill">
+              Daily knowledge
+            </a>
+            <a href="/telegram/learn" className="telegram-route-pill">
+              Guided learning
+            </a>
         </div>
       </header>
 
-      {!ready ? (
-        <div className="mx-auto max-w-3xl px-5 py-10">
-          <div className="h-32 animate-pulse rounded-3xl border opacity-40" />
-        </div>
-      ) : (
-        <KnowledgeLibrary
-          authenticated={Boolean(initDataRef.current)}
-          authorizedFetch={authorizedFetch}
-        />
-      )}
+      <div className="telegram-scroll-region">
+        {!ready ? (
+          <div className="telegram-skeleton-card h-32" aria-label="Loading Bookmarks & Notes" />
+        ) : (
+          <KnowledgeLibrary
+            authenticated={Boolean(initDataRef.current)}
+            authorizedFetch={authorizedFetch}
+          />
+        )}
+      </div>
     </main>
   );
 }

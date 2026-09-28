@@ -62,37 +62,37 @@ export default function ConversationHistory({
   }
 
   return (
-    <section className="mx-auto max-w-2xl px-5 py-7">
-      <div className="flex items-end justify-between gap-4">
+    <section className="telegram-screen">
+      <div className="telegram-screen-heading">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] opacity-45">
+          <p className="telegram-screen-kicker">
             Personal knowledge
           </p>
-          <h1 className="mt-1 font-display text-2xl">Saved conversations</h1>
+          <h1>Saved conversations</h1>
         </div>
         {authenticated && (
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex flex-wrap justify-end gap-2">
+          <div className="mt-3">
+            <div className="telegram-route-pills">
               <a
                 href="/telegram/daily"
-                className="rounded-full border px-3 py-1.5 text-xs font-semibold"
+                className="telegram-route-pill"
               >
                 Daily knowledge
               </a>
               <a
                 href="/telegram/learn"
-                className="rounded-full border px-3 py-1.5 text-xs font-semibold"
+                className="telegram-route-pill"
               >
                 Guided learning
               </a>
               <a
                 href="/telegram/library"
-                className="rounded-full border px-3 py-1.5 text-xs font-semibold"
+                className="telegram-route-pill"
               >
                 Bookmarks &amp; notes
               </a>
             </div>
-            <span className="text-xs opacity-50">
+            <span className="telegram-account-meta mt-2 block">
               {conversations.length} {conversations.length === 1 ? "chat" : "chats"}
             </span>
           </div>
@@ -100,7 +100,7 @@ export default function ConversationHistory({
       </div>
 
       {!authenticated ? (
-        <p className="mt-4 rounded-2xl border px-4 py-3 text-sm opacity-70">
+        <p className="telegram-account-empty">
           Open this Mini App from @the_isnad_bot to use authenticated conversation history.
         </p>
       ) : (
@@ -112,12 +112,12 @@ export default function ConversationHistory({
               value={query}
               onChange={(event) => onQueryChange(event.target.value)}
               placeholder="Search titles and messages…"
-              className="w-full rounded-2xl border bg-transparent px-4 py-3 text-sm outline-none"
+              className="telegram-text-field"
             />
           </label>
 
           {error && (
-            <p className="mt-3 rounded-xl border border-[#8a1f1f]/20 bg-[#fbf1f1] px-3 py-2 text-xs text-[#7a1f1f]">
+            <p className="telegram-error-banner mt-3">
               {error}
             </p>
           )}
@@ -125,11 +125,11 @@ export default function ConversationHistory({
           {loading ? (
             <div className="mt-6 space-y-2" aria-label="Loading saved conversations">
               {[0, 1, 2].map((item) => (
-                <div key={item} className="h-20 animate-pulse rounded-2xl border opacity-40" />
+                <div key={item} className="telegram-skeleton-card !mx-0 !h-20 !w-full" />
               ))}
             </div>
           ) : conversations.length === 0 ? (
-            <div className="mt-6 rounded-2xl border px-4 py-5 text-sm opacity-65">
+            <div className="telegram-account-empty mt-6">
               {query.trim()
                 ? "No conversations match this search."
                 : "No saved conversations yet. Ask a question and Isnad will preserve the chat here."}
@@ -140,7 +140,7 @@ export default function ConversationHistory({
                 const busy = busyId === conversation.id;
                 const editing = editingId === conversation.id;
                 return (
-                  <article key={conversation.id} className="rounded-2xl border px-4 py-3">
+                  <article key={conversation.id} className="telegram-group px-4 py-3">
                     <div className="flex items-start gap-3">
                       <button
                         type="button"
@@ -178,20 +178,20 @@ export default function ConversationHistory({
                           value={editingTitle}
                           maxLength={120}
                           onChange={(event) => setEditingTitle(event.target.value)}
-                          className="min-w-0 flex-1 rounded-xl border bg-transparent px-3 py-2 text-sm"
+                          className="telegram-text-field min-w-0 flex-1"
                           aria-label="Conversation title"
                         />
                         <button
                           type="submit"
                           disabled={busy || !editingTitle.trim()}
-                          className="rounded-xl border px-3 py-2 text-xs font-semibold disabled:opacity-40"
+                          className="telegram-primary-button !min-h-10 px-3 text-xs disabled:opacity-40"
                         >
                           Save
                         </button>
                         <button
                           type="button"
                           onClick={() => setEditingId(null)}
-                          className="rounded-xl border px-3 py-2 text-xs"
+                          className="telegram-route-pill !min-h-10 rounded-xl"
                         >
                           Cancel
                         </button>
@@ -202,7 +202,7 @@ export default function ConversationHistory({
                           type="button"
                           disabled={busy}
                           onClick={() => void run(conversation.id, () => onTogglePin(conversation))}
-                          className="rounded-full border px-3 py-1.5 disabled:opacity-40"
+                          className="telegram-route-pill disabled:opacity-40"
                         >
                           {conversation.pinnedAt ? "Unpin" : "Pin"}
                         </button>
@@ -210,7 +210,7 @@ export default function ConversationHistory({
                           type="button"
                           disabled={busy}
                           onClick={() => startRename(conversation)}
-                          className="rounded-full border px-3 py-1.5 disabled:opacity-40"
+                          className="telegram-route-pill disabled:opacity-40"
                         >
                           Rename
                         </button>
@@ -218,7 +218,7 @@ export default function ConversationHistory({
                           type="button"
                           disabled={busy}
                           onClick={() => void confirmArchive(conversation.id)}
-                          className="rounded-full border px-3 py-1.5 disabled:opacity-40"
+                          className="telegram-route-pill disabled:opacity-40"
                         >
                           Archive
                         </button>
