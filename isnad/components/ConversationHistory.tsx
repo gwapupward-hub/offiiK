@@ -74,20 +74,23 @@ export default function ConversationHistory({
         {authenticated && (
           <div className="mt-3">
             <div className="telegram-route-pills">
-              <a
+              <Link
                 href="/telegram/daily"
+                prefetch
                 className="telegram-route-pill"
               >
                 Daily knowledge
               </Link>
-              <a
+              <Link
                 href="/telegram/learn"
+                prefetch
                 className="telegram-route-pill"
               >
                 Guided learning
               </Link>
-              <a
+              <Link
                 href="/telegram/library"
+                prefetch
                 className="telegram-route-pill"
               >
                 Bookmarks &amp; notes
