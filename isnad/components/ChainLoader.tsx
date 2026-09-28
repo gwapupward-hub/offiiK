@@ -27,15 +27,15 @@ export default function ChainLoader() {
           {[0, 1, 2, 3].map((i) => (
             <span
               key={i}
-              className="star-8 chain-pulse h-2.5 w-2.5 bg-[var(--gold)]"
+              className="star-8 chain-pulse h-2.5 w-2.5 bg-[var(--tg-accent)]"
               style={{ animationDelay: `${i * 0.35}s` }}
             />
           ))}
         </span>
-        <span className="text-sm text-[var(--pine)]/60">Tracing the chain&hellip;</span>
+        <span className="text-sm text-[var(--tg-text-muted)]">Tracing the chain&hellip;</span>
       </div>
       {slow && (
-        <p className="pl-[3.1rem] text-xs text-[var(--pine)]/45">
+        <p className="pl-[3.1rem] text-xs text-[var(--tg-text-muted)]">
           Still working — detailed questions take a little longer.
         </p>
       )}
