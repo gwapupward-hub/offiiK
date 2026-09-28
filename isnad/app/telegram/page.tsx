@@ -104,7 +104,9 @@ export default function TelegramPage() {
   const webAppRef = useRef<WebAppSdk | null>(null);
   const initDataRef = useRef("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRegionRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScrollRef = useRef(true);
 
   const authorizedFetch = useCallback((url: string, options: RequestInit = {}) => {
     const headers = new Headers(options.headers);
@@ -219,6 +221,7 @@ export default function TelegramPage() {
     (question: string) => {
       const text = question.trim();
       if (!text || loading) return;
+      shouldAutoScrollRef.current = true;
       webAppRef.current?.HapticFeedback.impactOccurred("light");
       void ask(text, messages);
     },
@@ -276,7 +279,8 @@ export default function TelegramPage() {
   }, [historyQuery, ready, refreshHistory, view]);
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    if (!shouldAutoScrollRef.current) return;
+    scrollRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
   }, [messages, loading]);
 
   useEffect(() => {
@@ -289,10 +293,22 @@ export default function TelegramPage() {
     webAppRef.current?.HapticFeedback.selectionChanged();
     setNotice("");
     setView(nextView);
+    shouldAutoScrollRef.current = nextView === "chat";
+    window.requestAnimationFrame(() => {
+      scrollRegionRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    });
+  }
+
+  function handleScroll() {
+    const element = scrollRegionRef.current;
+    if (!element) return;
+    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+    shouldAutoScrollRef.current = distanceFromBottom < 96;
   }
 
   async function newChat() {
     webAppRef.current?.HapticFeedback.impactOccurred("light");
+    shouldAutoScrollRef.current = true;
     setMessages([]);
     setConversationId(null);
     setView("chat");
@@ -321,6 +337,7 @@ export default function TelegramPage() {
       conversation: ConversationSummary;
       messages: StoredMessage[];
     };
+    shouldAutoScrollRef.current = true;
     setConversationId(data.conversation.id);
     setMessages(data.messages.map(toMessage));
     setView("chat");
@@ -427,7 +444,12 @@ export default function TelegramPage() {
         </div>
       </header>
 
-      <div className="telegram-scroll-region">
+      <div
+        ref={scrollRegionRef}
+        className="telegram-scroll-region"
+        data-chat={view === "chat"}
+        onScroll={handleScroll}
+      >
         {view === "chat" && (
           <ChatView
             messages={messages}

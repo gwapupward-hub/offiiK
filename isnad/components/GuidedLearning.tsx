@@ -174,7 +174,7 @@ export default function GuidedLearning({
 
   if (!authenticated) {
     return (
-      <section className="mx-auto max-w-3xl px-5 py-10">
+      <section className="telegram-density-shell">
         <div className="rounded-3xl border px-5 py-6">
           <h2 className="font-display text-2xl">Guided Learning</h2>
           <p className="mt-3 text-sm leading-relaxed opacity-70">
@@ -238,13 +238,13 @@ function LearningHome({
 }) {
   const active = dashboard?.activeCourse;
   return (
-    <section className="mx-auto max-w-3xl px-5 py-8">
+    <section className="telegram-density-shell">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] opacity-45">
             Structured study
           </p>
-          <h2 className="mt-1 font-display text-3xl">Guided Learning Paths</h2>
+          <h2 className="mt-1 font-display text-2xl">Guided Learning Paths</h2>
           <p className="mt-2 max-w-xl text-sm leading-relaxed opacity-65">
             Study in sequence, complete lessons, and continue from where you stopped.
           </p>
@@ -257,7 +257,7 @@ function LearningHome({
       {error && <ErrorNotice message={error} />}
 
       {dashboard && (
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="telegram-summary-strip telegram-summary-strip-4 mt-4">
           <Stat label="Enrolled" value={dashboard.enrolledCourses} />
           <Stat label="Courses done" value={dashboard.completedCourses} />
           <Stat label="Lessons done" value={dashboard.completedLessons} />
@@ -269,7 +269,7 @@ function LearningHome({
         <button
           type="button"
           onClick={() => void onOpenCourse(active.slug)}
-          className="mt-7 w-full rounded-3xl border p-5 text-left"
+          className="telegram-compact-card mt-4 w-full text-left"
         >
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-45">
             Continue learning
@@ -287,25 +287,25 @@ function LearningHome({
         </button>
       )}
 
-      <div className="mt-8 flex items-center justify-between">
+      <div className="mt-5 flex items-center justify-between">
         <h3 className="font-display text-xl">Course catalog</h3>
         {loading && <span className="text-xs opacity-50">Refreshing…</span>}
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <div className="telegram-card-stack sm:grid-cols-2">
         {dashboard?.courses.map((item) => (
           <button
             type="button"
             key={item.id}
             onClick={() => void onOpenCourse(item.slug)}
-            className="rounded-3xl border p-5 text-left transition-transform active:scale-[0.99]"
+            className="telegram-compact-card text-left transition-transform active:scale-[0.99]"
           >
             <div className="flex items-center justify-between gap-3 text-[10px] font-semibold uppercase tracking-[0.14em] opacity-50">
               <span>{item.subject}</span>
               <span>{item.level}</span>
             </div>
             <h4 className="mt-3 font-display text-xl">{item.title}</h4>
-            <p className="mt-2 text-sm leading-relaxed opacity-65">{item.description}</p>
+            <p className="telegram-clamp-3 mt-2 text-sm leading-relaxed opacity-65">{item.description}</p>
             <div className="mt-4 flex items-center justify-between text-xs opacity-60">
               <span>{item.totalLessons} lessons</span>
               <span>{item.estimatedMinutes} min</span>
@@ -340,12 +340,12 @@ function CourseDetail({
 }) {
   const lessons = useMemo(() => course.modules.flatMap((module) => module.lessons), [course]);
   return (
-    <section className="mx-auto max-w-3xl px-5 py-8">
+    <section className="telegram-density-shell">
       <button type="button" onClick={onBack} className="rounded-full border px-3 py-1.5 text-xs">
         Back to courses
       </button>
 
-      <div className="mt-6 rounded-3xl border p-6">
+      <div className="telegram-compact-card mt-4">
         <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] opacity-50">
           <span>{course.subject}</span><span>•</span><span>{course.level}</span><span>•</span>
           <span>{course.estimatedMinutes} minutes</span>
@@ -379,9 +379,9 @@ function CourseDetail({
 
       {error && <ErrorNotice message={error} />}
 
-      <div className="mt-7 space-y-5">
+      <div className="telegram-card-stack">
         {course.modules.map((module) => (
-          <article key={module.id} className="rounded-3xl border p-5">
+          <article key={module.id} className="telegram-compact-card">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-45">
               Module {module.position}
             </p>
@@ -396,14 +396,14 @@ function CourseDetail({
                     key={lesson.id}
                     disabled={busy}
                     onClick={() => void onOpenLesson(lesson)}
-                    className="flex w-full items-start gap-3 py-4 text-left disabled:opacity-50"
+                    className="flex w-full items-start gap-3 py-3 text-left disabled:opacity-50"
                   >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold">
                       {lesson.status === "completed" ? "✓" : number || index + 1}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-semibold">{lesson.title}</span>
-                      <span className="mt-1 block text-xs leading-relaxed opacity-60">{lesson.summary}</span>
+                      <span className="telegram-clamp-3 mt-1 block text-xs leading-relaxed opacity-60">{lesson.summary}</span>
                       <span className="mt-1 block text-[11px] capitalize opacity-45">
                         {lesson.estimatedMinutes} min · {lesson.status.replace("_", " ")}
                       </span>
@@ -436,27 +436,27 @@ function LessonReader({
 }) {
   const completed = view.lesson.status === "completed";
   return (
-    <article className="mx-auto max-w-3xl px-5 py-8">
+    <article className="telegram-density-shell">
       <button type="button" onClick={onBack} className="rounded-full border px-3 py-1.5 text-xs">
         Back to course
       </button>
 
-      <header className="mt-6 border-b pb-6">
+      <header className="mt-4 border-b pb-4">
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-45">
           {view.course.title} · {view.module.title}
         </p>
-        <h2 className="mt-2 font-display text-3xl leading-tight">{view.lesson.title}</h2>
+        <h2 className="mt-2 font-display text-2xl leading-tight">{view.lesson.title}</h2>
         <p className="mt-3 text-sm leading-relaxed opacity-65">{view.lesson.summary}</p>
         <p className="mt-3 text-xs opacity-45">Estimated reading: {view.lesson.estimatedMinutes} minutes</p>
       </header>
 
       {error && <ErrorNotice message={error} />}
 
-      <div className="prose prose-sm mt-7 max-w-none dark:prose-invert prose-headings:font-display prose-a:break-words">
+      <div className="prose prose-sm mt-5 max-w-none dark:prose-invert prose-headings:font-display prose-a:break-words">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{view.lesson.contentMarkdown}</ReactMarkdown>
       </div>
 
-      <section className="mt-8 rounded-2xl border p-4">
+      <section className="telegram-compact-card mt-5">
         <h3 className="text-sm font-semibold">Lesson references</h3>
         <ul className="mt-3 space-y-2 text-xs opacity-70">
           {view.lesson.sources.map((source, index) => (
@@ -467,7 +467,7 @@ function LessonReader({
         </ul>
       </section>
 
-      <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t pt-6">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
         <button
           type="button"
           disabled={busy}
@@ -485,13 +485,13 @@ function LessonReader({
         </a>
       </div>
 
-      <nav className="mt-5 grid gap-3 sm:grid-cols-2" aria-label="Lesson navigation">
+      <nav className="mt-4 grid gap-2 sm:grid-cols-2" aria-label="Lesson navigation">
         {view.previousLesson ? (
           <button
             type="button"
             disabled={busy}
             onClick={() => void onNavigate(view.previousLesson!.id)}
-            className="rounded-2xl border p-4 text-left disabled:opacity-40"
+            className="telegram-compact-card text-left disabled:opacity-40"
           >
             <span className="block text-[10px] uppercase tracking-wide opacity-45">Previous</span>
             <span className="mt-1 block text-sm font-semibold">{view.previousLesson.title}</span>
@@ -502,7 +502,7 @@ function LessonReader({
             type="button"
             disabled={busy}
             onClick={() => void onNavigate(view.nextLesson!.id)}
-            className="rounded-2xl border p-4 text-left disabled:opacity-40"
+            className="telegram-compact-card text-left disabled:opacity-40"
           >
             <span className="block text-[10px] uppercase tracking-wide opacity-45">Next</span>
             <span className="mt-1 block text-sm font-semibold">{view.nextLesson.title}</span>
@@ -515,9 +515,9 @@ function LessonReader({
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border p-4">
-      <p className="font-display text-2xl">{value}</p>
-      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide opacity-45">{label}</p>
+    <div>
+      <p className="text-lg font-bold leading-none">{value}</p>
+      <p className="mt-1 truncate text-[9px] font-semibold uppercase tracking-wide opacity-45">{label}</p>
     </div>
   );
 }
@@ -546,11 +546,11 @@ function ErrorNotice({ message }: { message: string }) {
 
 function LoadingCards() {
   return (
-    <section className="mx-auto max-w-3xl space-y-4 px-5 py-10" aria-label="Loading learning paths">
-      <div className="h-36 animate-pulse rounded-3xl border opacity-40" />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="h-48 animate-pulse rounded-3xl border opacity-40" />
-        <div className="h-48 animate-pulse rounded-3xl border opacity-40" />
+    <section className="telegram-density-shell space-y-3" aria-label="Loading learning paths">
+      <div className="h-24 animate-pulse rounded-2xl border opacity-40" />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="h-36 animate-pulse rounded-2xl border opacity-40" />
+        <div className="h-36 animate-pulse rounded-2xl border opacity-40" />
       </div>
     </section>
   );

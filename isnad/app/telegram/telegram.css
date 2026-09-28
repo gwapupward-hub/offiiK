@@ -36,7 +36,8 @@
 
   position: relative;
   width: 100%;
-  min-height: var(--tg-viewport-stable-height, 100svh);
+  height: var(--tg-viewport-height, 100dvh);
+  min-height: 0;
   overflow: hidden;
   color: var(--tg-text);
   background: var(--tg-surface);
@@ -60,7 +61,7 @@
   position: relative;
   display: flex;
   width: 100%;
-  height: var(--tg-viewport-stable-height, 100svh);
+  height: var(--tg-viewport-height, 100dvh);
   min-height: 0;
   flex-direction: column;
   overflow: hidden;
@@ -192,8 +193,19 @@
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   padding-bottom: calc(78px + var(--tg-safe-bottom));
-  scroll-padding-bottom: calc(156px + var(--tg-safe-bottom));
+  scroll-padding-bottom: calc(88px + var(--tg-safe-bottom));
+}
+
+.telegram-scroll-region[data-chat="true"] {
+  padding-bottom: calc(154px + var(--tg-safe-bottom));
+  scroll-padding-bottom: calc(166px + var(--tg-safe-bottom));
+}
+
+.telegram-section-topbar + .telegram-scroll-region {
+  padding-bottom: calc(24px + var(--tg-safe-bottom));
+  scroll-padding-bottom: calc(32px + var(--tg-safe-bottom));
 }
 
 .telegram-screen {
@@ -413,15 +425,26 @@
 }
 
 .telegram-starter-grid {
-  display: grid;
+  display: flex;
   gap: 10px;
-  margin-top: 24px;
+  margin: 22px -16px 0;
+  padding: 0 16px 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.telegram-starter-grid::-webkit-scrollbar {
+  display: none;
 }
 
 .telegram-starter-card {
   display: block;
   width: 100%;
   min-height: 58px;
+  flex: 0 0 min(82vw, 320px);
+  scroll-snap-align: start;
   border: 1px solid var(--tg-hairline);
   border-radius: 15px;
   background: var(--tg-surface-grouped);
@@ -673,7 +696,15 @@
 
 @media (min-width: 640px) {
   .telegram-starter-grid {
+    display: grid;
+    margin-inline: 0;
+    padding-inline: 0;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .telegram-starter-card {
+    flex-basis: auto;
   }
 }
 
@@ -704,4 +735,85 @@
   .telegram-skeleton-card {
     animation: none;
   }
+}
+
+
+/* Compact content density for secondary Mini App screens. */
+.telegram-density-shell {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: 16px calc(14px + var(--tg-safe-right)) 24px calc(14px + var(--tg-safe-left));
+}
+
+.telegram-card-stack {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.telegram-compact-card {
+  border: 1px solid var(--tg-hairline);
+  border-radius: 16px;
+  background: var(--tg-surface-grouped);
+  padding: 14px;
+}
+
+.telegram-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--tg-hairline);
+  border-radius: 14px;
+  background: var(--tg-surface-grouped);
+}
+
+.telegram-summary-strip > * {
+  min-width: 0;
+  border-right: 1px solid var(--tg-hairline);
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.telegram-summary-strip > :last-child {
+  border-right: 0;
+}
+
+.telegram-summary-strip-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.telegram-segment-bar {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  margin: 12px -14px 0;
+  padding: 8px 14px;
+  background: color-mix(in srgb, var(--tg-surface) 96%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.telegram-segment-bar > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  border: 1px solid var(--tg-hairline);
+  border-radius: 12px;
+  background: var(--tg-surface-grouped);
+  padding: 2px;
+}
+
+.telegram-clamp-3,
+.telegram-clamp-4 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+}
+
+.telegram-clamp-3 {
+  -webkit-line-clamp: 3;
+}
+
+.telegram-clamp-4 {
+  -webkit-line-clamp: 4;
 }

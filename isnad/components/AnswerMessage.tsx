@@ -43,7 +43,7 @@ export default function AnswerMessage({
 
   return (
     <div>
-      <article className="rounded-2xl border border-[var(--pine)]/15 bg-[var(--parchment-soft)] px-5 py-4 shadow-sm sm:px-6 sm:py-5">
+      <article className="telegram-compact-card">
         {(certainty ||
           routedToFinance ||
           routedToTafsir ||
@@ -56,49 +56,49 @@ export default function AnswerMessage({
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {certainty && <CertaintyChip certainty={certainty} />}
             {routedToDawahTarbiyah && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--pine)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--pine-deep)]">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--pine)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--tg-text)]">
                 <span className="star-8 inline-block h-2 w-2 bg-[var(--gold)]" aria-hidden="true" />
                 Daʿwah &amp; Tarbiyah
               </span>
             )}
             {routedToArabic && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)]/15 px-2.5 py-1 text-[11px] font-medium text-[var(--pine-deep)]">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)]/15 px-2.5 py-1 text-[11px] font-medium text-[var(--tg-text)]">
                 <span className="star-8 inline-block h-2 w-2 bg-[var(--gold)]" aria-hidden="true" />
                 Arabic Language
               </span>
             )}
             {routedToAqidah && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--pine-deep)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--pine-deep)]">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--pine-deep)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--tg-text)]">
                 <span className="star-8 inline-block h-2 w-2 bg-[var(--gold)]" aria-hidden="true" />
                 ʿAqīdah
               </span>
             )}
             {routedToSeerah && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--pine)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--pine-deep)]">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--pine)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--tg-text)]">
                 <span className="star-8 inline-block h-2 w-2 bg-[var(--gold)]" aria-hidden="true" />
                 Seerah
               </span>
             )}
             {routedToFiqh && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)]/15 px-2.5 py-1 text-[11px] font-medium text-[var(--pine-deep)]">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)]/15 px-2.5 py-1 text-[11px] font-medium text-[var(--tg-text)]">
                 <span className="star-8 inline-block h-2 w-2 bg-[var(--gold)]" aria-hidden="true" />
                 Fiqh
               </span>
             )}
             {routedToHadith && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--pine-deep)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--pine-deep)]">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--pine-deep)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--tg-text)]">
                 <span className="star-8 inline-block h-2 w-2 bg-[var(--gold)]" aria-hidden="true" />
                 Hadith Sciences
               </span>
             )}
             {routedToTafsir && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)]/12 px-2.5 py-1 text-[11px] font-medium text-[var(--pine-deep)]">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)]/12 px-2.5 py-1 text-[11px] font-medium text-[var(--tg-text)]">
                 <span className="star-8 inline-block h-2 w-2 bg-[var(--gold)]" aria-hidden="true" />
                 Tafsīr (Qur&apos;an)
               </span>
             )}
             {routedToFinance && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--pine)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--pine)]">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--pine)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--tg-text)]">
                 <span className="star-8 inline-block h-2 w-2 bg-[var(--gold)]" aria-hidden="true" />
                 Muʿāmalāt (finance)
               </span>
@@ -106,7 +106,7 @@ export default function AnswerMessage({
           </div>
         )}
 
-        <div className="prose prose-sm max-w-none sm:prose-base prose-headings:font-display prose-headings:font-medium prose-headings:text-[var(--pine-deep)] prose-h3:mb-1.5 prose-h3:mt-5 prose-h3:text-base prose-p:leading-relaxed prose-p:text-[var(--ink)] prose-strong:text-[var(--pine-deep)] prose-li:text-[var(--ink)] sm:prose-h3:text-lg">
+        <div className="prose prose-sm max-w-none prose-headings:font-display prose-headings:font-medium prose-headings:text-[var(--tg-text)] prose-h3:mb-1.5 prose-h3:mt-4 prose-h3:text-base prose-p:my-2 prose-p:leading-relaxed prose-p:text-[var(--tg-text)] prose-strong:text-[var(--tg-text)] prose-li:text-[var(--tg-text)]">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{lead}</ReactMarkdown>
         </div>
 
@@ -116,7 +116,7 @@ export default function AnswerMessage({
       <div className="mt-2 flex gap-3 pl-1">
         <button
           onClick={copy}
-          className="rounded text-[11.5px] text-[var(--pine)]/50 transition-colors hover:text-[var(--pine)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
+          className="rounded text-[11.5px] text-[var(--tg-text-muted)] transition-colors hover:text-[var(--tg-text)]"
         >
           {copied ? "Copied" : "Copy"}
         </button>

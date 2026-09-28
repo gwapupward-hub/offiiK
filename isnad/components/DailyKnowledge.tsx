@@ -78,7 +78,7 @@ export default function DailyKnowledge({
 
   if (!authenticated) {
     return (
-      <section className="mx-auto max-w-3xl px-5 py-8">
+      <section className="telegram-density-shell">
         <EmptyAccountState />
       </section>
     );
@@ -86,7 +86,7 @@ export default function DailyKnowledge({
 
   if (loading && !dashboard) {
     return (
-      <section className="mx-auto max-w-3xl space-y-4 px-5 py-8">
+      <section className="telegram-density-shell space-y-3">
         <div className="h-32 animate-pulse rounded-3xl border opacity-40" />
         {[0, 1, 2].map((item) => (
           <div key={item} className="h-56 animate-pulse rounded-3xl border opacity-40" />
@@ -97,7 +97,7 @@ export default function DailyKnowledge({
 
   if (!dashboard) {
     return (
-      <section className="mx-auto max-w-3xl px-5 py-8">
+      <section className="telegram-density-shell">
         <p className="rounded-2xl border border-[#8a1f1f]/20 bg-[#fbf1f1] px-4 py-3 text-sm text-[#7a1f1f]">
           {error || "Daily knowledge is unavailable."}
         </p>
@@ -115,8 +115,8 @@ export default function DailyKnowledge({
   const percent = Math.round((dashboard.progress.completedCount / 3) * 100);
 
   return (
-    <section className="mx-auto max-w-3xl px-5 py-8">
-      <div className="rounded-3xl border p-5 sm:p-6">
+    <section className="telegram-density-shell">
+      <div className="telegram-compact-card">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] opacity-50">
@@ -127,7 +127,7 @@ export default function DailyKnowledge({
               Read one Qur’an passage, one authentic hadith lesson, and one Arabic word.
             </p>
           </div>
-          <div className="min-w-28 rounded-2xl border px-4 py-3 text-center">
+          <div className="min-w-24 rounded-xl border px-3 py-2 text-center">
             <p className="text-2xl font-bold">{percent}%</p>
             <p className="text-[11px] uppercase tracking-wide opacity-55">
               {dashboard.progress.completedCount}/3 complete
@@ -135,7 +135,7 @@ export default function DailyKnowledge({
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <div className="telegram-summary-strip mt-4">
           <Stat label="Current streak" value={`${dashboard.streak.current} day${dashboard.streak.current === 1 ? "" : "s"}`} />
           <Stat label="Longest streak" value={`${dashboard.streak.longest} day${dashboard.streak.longest === 1 ? "" : "s"}`} />
           <Stat label="Completed days" value={String(dashboard.streak.totalCompletedDays)} />
@@ -154,7 +154,7 @@ export default function DailyKnowledge({
         </p>
       )}
 
-      <div className="mt-6 space-y-5">
+      <div className="telegram-card-stack">
         <KnowledgeCard
           eyebrow="Daily Qur’an"
           title={`${dashboard.quran.surahName} ${dashboard.quran.surahNumber}:${dashboard.quran.verseNumber}`}
@@ -162,11 +162,11 @@ export default function DailyKnowledge({
           busy={busySection === "quran"}
           onToggle={(completed) => updateSection("quran", completed)}
         >
-          <p dir="rtl" lang="ar" className="mt-5 text-right font-serif text-3xl leading-loose">
+          <p dir="rtl" lang="ar" className="mt-3 text-right font-serif text-2xl leading-loose">
             {dashboard.quran.arabicText}
           </p>
-          <p className="mt-4 text-base leading-relaxed">{dashboard.quran.translation}</p>
-          <div className="mt-4 rounded-2xl border px-4 py-3">
+          <p className="mt-3 text-sm leading-relaxed">{dashboard.quran.translation}</p>
+          <div className="mt-3 rounded-xl border px-3 py-2.5">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-45">
               Reflection
             </p>
@@ -187,7 +187,7 @@ export default function DailyKnowledge({
           onToggle={(completed) => updateSection("hadith", completed)}
         >
           <p className="mt-5 text-base leading-relaxed">{dashboard.hadith.summary}</p>
-          <div className="mt-4 rounded-2xl border px-4 py-3">
+          <div className="mt-3 rounded-xl border px-3 py-2.5">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-45">
               Practical lesson
             </p>
@@ -211,9 +211,9 @@ export default function DailyKnowledge({
           busy={busySection === "vocabulary"}
           onToggle={(completed) => updateSection("vocabulary", completed)}
         >
-          <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+          <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p dir="rtl" lang="ar" className="font-serif text-5xl leading-tight">
+              <p dir="rtl" lang="ar" className="font-serif text-4xl leading-tight">
                 {dashboard.vocabulary.arabic}
               </p>
               <p className="mt-2 text-sm font-semibold">{dashboard.vocabulary.transliteration}</p>
@@ -237,10 +237,10 @@ export default function DailyKnowledge({
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        <a href="/telegram/learn" className="rounded-full border px-4 py-2 text-xs font-semibold">
+        <a href="/telegram/learn" className="telegram-route-pill">
           Continue guided learning
         </a>
-        <a href="/telegram/library" className="rounded-full border px-4 py-2 text-xs font-semibold">
+        <a href="/telegram/library" className="telegram-route-pill">
           Open bookmarks &amp; notes
         </a>
       </div>
@@ -268,7 +268,7 @@ function KnowledgeCard({
   children: React.ReactNode;
 }) {
   return (
-    <article className="rounded-3xl border p-5 sm:p-6">
+    <article className="telegram-compact-card">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] opacity-45">
@@ -293,9 +293,9 @@ function KnowledgeCard({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border px-4 py-3">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] opacity-45">{label}</p>
-      <p className="mt-1 text-sm font-semibold">{value}</p>
+    <div>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] opacity-45">{label}</p>
+      <p className="mt-1 truncate text-xs font-semibold sm:text-sm">{value}</p>
     </div>
   );
 }

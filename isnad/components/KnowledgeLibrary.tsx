@@ -336,7 +336,7 @@ export default function KnowledgeLibrary({
 
   if (!authenticated) {
     return (
-      <section className="mx-auto max-w-3xl px-5 py-8">
+      <section className="telegram-density-shell">
         <div className="rounded-3xl border px-5 py-6 text-sm opacity-75">
           Open this screen from @the_isnad_bot to use authenticated bookmarks, notes, collections,
           and exports.
@@ -346,14 +346,14 @@ export default function KnowledgeLibrary({
   }
 
   return (
-    <section className="mx-auto max-w-3xl px-5 py-7">
-      <div className="grid grid-cols-3 gap-2">
+    <section className="telegram-density-shell">
+      <div className="telegram-summary-strip">
         <Stat label="Bookmarks" value={library.bookmarks.length} />
         <Stat label="Notes" value={library.notes.length} />
         <Stat label="Collections" value={library.collections.length} />
       </div>
 
-      <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_220px]">
+      <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_220px]">
         <input
           type="search"
           value={query}
@@ -385,7 +385,8 @@ export default function KnowledgeLibrary({
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-4 gap-1 rounded-2xl border p-1">
+      <div className="telegram-segment-bar">
+        <div>
         {(["bookmarks", "notes", "collections", "import"] as Tab[]).map((item) => (
           <button
             key={item}
@@ -397,6 +398,7 @@ export default function KnowledgeLibrary({
             {item === "import" ? "From chats" : item}
           </button>
         ))}
+        </div>
       </div>
 
       {loading ? (
@@ -406,8 +408,8 @@ export default function KnowledgeLibrary({
       ) : (
         <>
           {tab === "bookmarks" && (
-            <div className="mt-6 space-y-4">
-              <details className="rounded-2xl border px-4 py-3">
+            <div className="telegram-card-stack">
+              <details className="telegram-compact-card">
                 <summary className="cursor-pointer text-sm font-semibold">Add a custom bookmark</summary>
                 <form onSubmit={createBookmark} className="mt-4 space-y-3">
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -431,7 +433,7 @@ export default function KnowledgeLibrary({
               </details>
 
               {library.bookmarks.length === 0 ? <Empty text="No bookmarks match this view." /> : library.bookmarks.map((bookmark) => (
-                <article key={bookmark.id} className="rounded-2xl border px-4 py-4">
+                <article key={bookmark.id} className="telegram-compact-card">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] opacity-45">{bookmark.kind.replace(/_/g, " ")}</p>
@@ -439,7 +441,7 @@ export default function KnowledgeLibrary({
                     </div>
                     <span className="text-[10px] opacity-45">{new Date(bookmark.updatedAt).toLocaleDateString()}</span>
                   </div>
-                  <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed opacity-80">{bookmark.content}</p>
+                  <p className="telegram-clamp-4 mt-2 whitespace-pre-wrap text-sm leading-relaxed opacity-80">{bookmark.content}</p>
                   {bookmark.note && <p className="mt-3 rounded-xl border px-3 py-2 text-xs"><strong>Note:</strong> {bookmark.note}</p>}
                   <Tags tags={bookmark.tags} />
                   {bookmark.citations.length > 0 && (
@@ -450,7 +452,7 @@ export default function KnowledgeLibrary({
                       </ul>
                     </details>
                   )}
-                  <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3">
+                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-2.5">
                     <CollectionSelect value={bookmark.collectionId ?? ""} collections={library.collections} onChange={(value) => void moveItem("bookmark", bookmark.id, value)} label="Unfiled" compact />
                     <ActionButton label="Edit" disabled={busyId === bookmark.id} onClick={() => void editBookmark(bookmark)} />
                     <ActionButton label="Delete" disabled={busyId === bookmark.id} onClick={() => void remove("bookmark", bookmark.id)} />
@@ -461,8 +463,8 @@ export default function KnowledgeLibrary({
           )}
 
           {tab === "notes" && (
-            <div className="mt-6 space-y-4">
-              <details className="rounded-2xl border px-4 py-3" open={library.notes.length === 0}>
+            <div className="telegram-card-stack">
+              <details className="telegram-compact-card" open={library.notes.length === 0}>
                 <summary className="cursor-pointer text-sm font-semibold">Write a personal note</summary>
                 <form onSubmit={createNote} className="mt-4 space-y-3">
                   <input value={noteTitle} onChange={(event) => setNoteTitle(event.target.value)} maxLength={160} placeholder="Note title" className="w-full rounded-xl border bg-transparent px-3 py-2 text-sm" />
@@ -476,14 +478,14 @@ export default function KnowledgeLibrary({
               </details>
 
               {library.notes.length === 0 ? <Empty text="No notes match this view." /> : library.notes.map((note) => (
-                <article key={note.id} className="rounded-2xl border px-4 py-4">
+                <article key={note.id} className="telegram-compact-card">
                   <div className="flex items-start justify-between gap-3">
                     <h2 className="font-semibold">{note.title}</h2>
                     <span className="text-[10px] opacity-45">{new Date(note.updatedAt).toLocaleDateString()}</span>
                   </div>
-                  <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed opacity-80">{note.content}</p>
+                  <p className="telegram-clamp-4 mt-2 whitespace-pre-wrap text-sm leading-relaxed opacity-80">{note.content}</p>
                   <Tags tags={note.tags} />
-                  <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3">
+                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-2.5">
                     <CollectionSelect value={note.collectionId ?? ""} collections={library.collections} onChange={(value) => void moveItem("note", note.id, value)} label="Unfiled" compact />
                     <ActionButton label="Edit" disabled={busyId === note.id} onClick={() => void editNote(note)} />
                     <ActionButton label="Delete" disabled={busyId === note.id} onClick={() => void remove("note", note.id)} />
@@ -494,8 +496,8 @@ export default function KnowledgeLibrary({
           )}
 
           {tab === "collections" && (
-            <div className="mt-6 space-y-4">
-              <form onSubmit={createCollection} className="rounded-2xl border px-4 py-4">
+            <div className="telegram-card-stack">
+              <form onSubmit={createCollection} className="telegram-compact-card">
                 <h2 className="text-sm font-semibold">Create a collection</h2>
                 <div className="mt-3 space-y-3">
                   <input value={collectionName} onChange={(event) => setCollectionName(event.target.value)} maxLength={80} placeholder="Collection name" className="w-full rounded-xl border bg-transparent px-3 py-2 text-sm" />
@@ -504,11 +506,11 @@ export default function KnowledgeLibrary({
                 </div>
               </form>
               {library.collections.length === 0 ? <Empty text="No collections yet." /> : library.collections.map((collection) => (
-                <article key={collection.id} className="rounded-2xl border px-4 py-4">
+                <article key={collection.id} className="telegram-compact-card">
                   <h2 className="font-semibold">{collection.name}</h2>
                   {collection.description && <p className="mt-1 text-sm opacity-65">{collection.description}</p>}
                   <p className="mt-2 text-xs opacity-50">{collection.bookmarkCount} bookmarks · {collection.noteCount} notes</p>
-                  <div className="mt-3 flex gap-2 border-t pt-3">
+                  <div className="mt-3 flex gap-2 border-t pt-2.5">
                     <ActionButton label="Edit" disabled={busyId === collection.id} onClick={() => void editCollection(collection)} />
                     <ActionButton label="Delete" disabled={busyId === collection.id} onClick={() => void remove("collection", collection.id)} />
                   </div>
@@ -518,8 +520,8 @@ export default function KnowledgeLibrary({
           )}
 
           {tab === "import" && (
-            <div className="mt-6 space-y-4">
-              <div className="rounded-2xl border px-4 py-4">
+            <div className="telegram-card-stack">
+              <div className="telegram-compact-card">
                 <h2 className="text-sm font-semibold">Save an AI response</h2>
                 <p className="mt-1 text-xs opacity-60">Choose a saved conversation, then bookmark an individual answer with its references.</p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -536,9 +538,9 @@ export default function KnowledgeLibrary({
               ) : conversationMessages.length === 0 ? (
                 <Empty text={selectedConversation ? "No assistant responses found in this conversation." : "Select a conversation to view its answers."} />
               ) : conversationMessages.map((message) => (
-                <article key={message.id} className="rounded-2xl border px-4 py-4">
-                  <p className="line-clamp-6 whitespace-pre-wrap text-sm leading-relaxed opacity-80">{message.content}</p>
-                  <div className="mt-3 flex items-center justify-between gap-3 border-t pt-3">
+                <article key={message.id} className="telegram-compact-card">
+                  <p className="telegram-clamp-4 whitespace-pre-wrap text-sm leading-relaxed opacity-80">{message.content}</p>
+                  <div className="mt-3 flex items-center justify-between gap-3 border-t pt-2.5">
                     <span className="text-xs opacity-50">{message.citations.length} references</span>
                     <button type="button" disabled={busyId === message.id} onClick={() => void importMessage(message)} className="rounded-xl px-3 py-2 text-xs font-semibold disabled:opacity-40" style={{ background: "var(--tg-theme-button-color, var(--pine))", color: "var(--tg-theme-button-text-color, white)" }}>
                       {busyId === message.id ? "Saving…" : "Save response"}
@@ -593,9 +595,9 @@ function ActionButton({ label, disabled, onClick }: { label: string; disabled: b
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border px-3 py-3 text-center">
-      <p className="font-display text-xl">{value}</p>
-      <p className="text-[10px] uppercase tracking-wide opacity-50">{label}</p>
+    <div>
+      <p className="text-lg font-bold leading-none">{value}</p>
+      <p className="mt-1 truncate text-[9px] uppercase tracking-wide opacity-50">{label}</p>
     </div>
   );
 }
@@ -606,7 +608,7 @@ function Tags({ tags }: { tags: string[] }) {
 }
 
 function Empty({ text }: { text: string }) {
-  return <div className="rounded-2xl border px-4 py-5 text-sm opacity-60">{text}</div>;
+  return <div className="telegram-compact-card text-sm opacity-60">{text}</div>;
 }
 
 function capitalize(value: string) {

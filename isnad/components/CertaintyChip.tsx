@@ -6,11 +6,11 @@ import type { Certainty, CertaintyLevel } from "@/lib/parseAnswer";
  * decision-relevant fact in an answer, so it sits at the top of the card.
  */
 const STYLES: Record<CertaintyLevel, { bg: string; fg: string; ring: string }> = {
-  established: { bg: "bg-[#123832]/10", fg: "text-[var(--pine-deep)]", ring: "ring-[var(--pine)]/20" },
-  majority: { bg: "bg-[#123832]/[0.06]", fg: "text-[var(--pine)]", ring: "ring-[var(--pine)]/15" },
-  disagreement: { bg: "bg-[#b8892f]/12", fg: "text-[#7a5a12]", ring: "ring-[var(--gold)]/30" },
-  limited: { bg: "bg-[#b8892f]/[0.08]", fg: "text-[#7a5a12]", ring: "ring-[var(--gold)]/20" },
-  unverified: { bg: "bg-[#8a1f1f]/[0.07]", fg: "text-[#7a1f1f]", ring: "ring-[#8a1f1f]/20" },
+  established: { bg: "bg-[#123832]/10", fg: "text-[var(--tg-text)]", ring: "ring-[var(--pine)]/20" },
+  majority: { bg: "bg-[#123832]/[0.06]", fg: "text-[var(--tg-text)]", ring: "ring-[var(--pine)]/15" },
+  disagreement: { bg: "bg-[#b8892f]/12", fg: "text-[var(--tg-text)]", ring: "ring-[var(--gold)]/30" },
+  limited: { bg: "bg-[#b8892f]/[0.08]", fg: "text-[var(--tg-text)]", ring: "ring-[var(--gold)]/20" },
+  unverified: { bg: "bg-[#8a1f1f]/[0.07]", fg: "text-[var(--tg-text)]", ring: "ring-[#8a1f1f]/20" },
 };
 
 export default function CertaintyChip({ certainty }: { certainty: Certainty }) {
