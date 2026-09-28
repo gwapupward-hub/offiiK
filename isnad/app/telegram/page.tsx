@@ -219,6 +219,7 @@ export default function TelegramPage() {
     (question: string) => {
       const text = question.trim();
       if (!text || loading) return;
+      webAppRef.current?.HapticFeedback.impactOccurred("light");
       void ask(text, messages);
     },
     [ask, loading, messages]
