@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type {
@@ -249,9 +250,9 @@ function LearningHome({
             Study in sequence, complete lessons, and continue from where you stopped.
           </p>
         </div>
-        <a href="/telegram/library" className="rounded-full border px-3 py-1.5 text-xs font-semibold">
+        <Link href="/telegram/library" prefetch className="rounded-full border px-3 py-1.5 text-xs font-semibold">
           Notes &amp; bookmarks
-        </a>
+        </Link>
       </div>
 
       {error && <ErrorNotice message={error} />}
@@ -480,9 +481,9 @@ function LessonReader({
         >
           {completed ? "Mark for review" : "Complete lesson"}
         </button>
-        <a href="/telegram/library" className="rounded-xl border px-4 py-2.5 text-sm">
+        <Link href="/telegram/library" prefetch className="rounded-xl border px-4 py-2.5 text-sm">
           Open study notes
-        </a>
+        </Link>
       </div>
 
       <nav className="mt-4 grid gap-2 sm:grid-cols-2" aria-label="Lesson navigation">
