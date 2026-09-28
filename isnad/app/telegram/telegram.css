@@ -169,6 +169,12 @@
   transition: transform 160ms ease, opacity 160ms ease;
 }
 
+.telegram-icon-button svg,
+.telegram-send-button svg {
+  width: 20px;
+  height: 20px;
+}
+
 .telegram-icon-button:active,
 .telegram-tab:active,
 .telegram-starter-card:active,
