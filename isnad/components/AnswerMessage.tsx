@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { parseAnswer } from "@/lib/parseAnswer";
@@ -32,18 +32,15 @@ export default function AnswerMessage({
 }) {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(streaming);
-  const streamedHereRef = useRef(streaming);
   const { lead, tiers, certainty, structured } = parseAnswer(content);
 
   useEffect(() => {
-    if (!streaming) return;
-    streamedHereRef.current = true;
-    setExpanded(true);
+    if (streaming) setExpanded(true);
   }, [streaming]);
 
   const longAnswer = lead.length > 1400;
   const canCollapse = longAnswer && !streaming;
-  const collapsed = canCollapse && !expanded && !streamedHereRef.current;
+  const collapsed = canCollapse && !expanded;
 
   async function copy() {
     try {
