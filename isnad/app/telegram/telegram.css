@@ -1,4 +1,4 @@
-/* Telegram-native presentation layer. Scoped to /telegram via app/telegram/layout.tsx. */
+/* Telegram-native presentation layer for the isolated /telegram Mini App routes. */
 
 .telegram-viewport {
   --tg-surface: var(--tg-theme-bg-color, #f6f1e6);
