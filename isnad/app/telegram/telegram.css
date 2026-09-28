@@ -203,6 +203,11 @@
   scroll-padding-bottom: calc(166px + var(--tg-safe-bottom));
 }
 
+.telegram-section-topbar + .telegram-scroll-region {
+  padding-bottom: calc(24px + var(--tg-safe-bottom));
+  scroll-padding-bottom: calc(32px + var(--tg-safe-bottom));
+}
+
 .telegram-screen {
   width: min(100%, 720px);
   margin: 0 auto;
