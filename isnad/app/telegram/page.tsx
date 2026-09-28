@@ -34,11 +34,33 @@ type Message = {
 };
 
 const STARTERS = [
-  "I joined prayer as the imam rose from rukūʿ. Did the rakʿah count?",
-  "How do I calculate zakāh on savings and crypto?",
-  "How can I verify whether a hadith is authentic?",
-  "What is firmly established about the Hijrah and the cave?",
-  "Design a wise first-month support plan for a new Muslim.",
+  {
+    label: "Prayer",
+    question: "I joined prayer as the imam rose from rukūʿ. Did the rakʿah count?",
+  },
+  {
+    label: "Zakāh",
+    question: "How do I calculate zakāh on savings and crypto?",
+  },
+  {
+    label: "Hadith",
+    question: "How can I verify whether a hadith is authentic?",
+  },
+  {
+    label: "Seerah",
+    question: "What is firmly established about the Hijrah and the cave?",
+  },
+  {
+    label: "New Muslim",
+    question: "Design a wise first-month support plan for a new Muslim.",
+  },
+];
+
+const NAV_ITEMS: { id: View; label: string }[] = [
+  { id: "chat", label: "Ask" },
+  { id: "history", label: "Saved" },
+  { id: "profile", label: "Profile" },
+  { id: "settings", label: "Settings" },
 ];
 
 function routingFrom(data: Record<string, unknown>) {
@@ -209,22 +231,33 @@ export default function TelegramPage() {
 
   useEffect(() => {
     let cancelled = false;
+    let app: WebAppSdk | null = null;
+    let themeHandler: (() => void) | null = null;
+
     import("@twa-dev/sdk")
       .then(({ default: WebApp }) => {
         if (cancelled) return;
+        app = WebApp;
         WebApp.ready();
         WebApp.expand();
+        WebApp.BackButton.hide();
+        WebApp.MainButton.hide();
         webAppRef.current = WebApp;
         initDataRef.current = WebApp.initData ?? "";
-        applyThemeParams(containerRef.current, WebApp.themeParams);
-        WebApp.onEvent("themeChanged", () =>
-          applyThemeParams(containerRef.current, WebApp.themeParams)
-        );
+
+        const syncTheme = () => applyThemeParams(containerRef.current, WebApp.themeParams);
+        themeHandler = syncTheme;
+        syncTheme();
+        WebApp.onEvent("themeChanged", syncTheme);
         setReady(true);
       })
       .catch(() => setReady(true));
+
     return () => {
       cancelled = true;
+      if (app && themeHandler) app.offEvent("themeChanged", themeHandler);
+      app?.MainButton.hide();
+      app?.BackButton.hide();
     };
   }, []);
 
@@ -242,36 +275,6 @@ export default function TelegramPage() {
   }, [historyQuery, ready, refreshHistory, view]);
 
   useEffect(() => {
-    const WebApp = webAppRef.current;
-    if (!WebApp || !ready) return;
-    const button = WebApp.MainButton;
-    const handler = () => sendRef.current(input);
-
-    if (view !== "chat") {
-      button.hide();
-      return;
-    }
-    if (loading) {
-      button.setText("Tracing the chain…");
-      button.showProgress(false);
-      button.show();
-    } else {
-      button.hideProgress();
-      button.setText("Ask");
-      if (input.trim()) {
-        button.enable();
-        button.show();
-      } else {
-        button.hide();
-      }
-    }
-    button.onClick(handler);
-    return () => {
-      button.offClick(handler);
-    };
-  }, [ready, input, loading, view]);
-
-  useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, loading]);
 
@@ -281,7 +284,14 @@ export default function TelegramPage() {
       settings.theme === "system" ? "light dark" : settings.theme;
   }, [settings]);
 
+  function selectView(nextView: View) {
+    webAppRef.current?.HapticFeedback.selectionChanged();
+    setNotice("");
+    setView(nextView);
+  }
+
   async function newChat() {
+    webAppRef.current?.HapticFeedback.impactOccurred("light");
     setMessages([]);
     setConversationId(null);
     setView("chat");
@@ -386,30 +396,37 @@ export default function TelegramPage() {
   const awaitingFirstToken = loading && messages.at(-1)?.content === "";
 
   return (
-    <main
-      ref={containerRef}
-      className="flex min-h-screen flex-1 flex-col"
-      style={{
-        background: "var(--tg-theme-bg-color, var(--parchment))",
-        color: "var(--tg-theme-text-color, var(--ink))",
-      }}
-    >
-      <header
-        className="flex items-center justify-between px-5 py-4"
-        style={{ borderBottom: "1px solid var(--tg-theme-hint-color, rgba(18,56,50,0.1))" }}
-      >
-        <div className="flex items-center gap-2.5">
-          <span className="star-8 star-spin inline-block h-4 w-4 bg-[var(--gold)]" aria-hidden="true" />
-          <span className="font-display text-lg tracking-tight">Isnad</span>
+    <main ref={containerRef} className="telegram-main">
+      <header className="telegram-topbar">
+        <div className="telegram-brand">
+          <span className="telegram-brand-mark" aria-hidden="true">
+            <span className="star-8" />
+          </span>
+          <div className="min-w-0">
+            <p className="telegram-eyebrow">Islamic knowledge</p>
+            <span className="telegram-brand-name">Isnad</span>
+          </div>
         </div>
-        {view === "chat" && hasStarted && (
-          <button className="rounded-full border px-3 py-1 text-xs" onClick={() => void newChat()}>
-            New chat
-          </button>
-        )}
+
+        <div className="telegram-topbar-actions">
+          <span className="telegram-view-chip">
+            {NAV_ITEMS.find((item) => item.id === view)?.label ?? "Isnad"}
+          </span>
+          {view === "chat" && hasStarted && (
+            <button
+              type="button"
+              className="telegram-icon-button"
+              onClick={() => void newChat()}
+              aria-label="Start a new chat"
+              title="New chat"
+            >
+              <NavIcon name="new" />
+            </button>
+          )}
+        </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className="telegram-scroll-region">
         {view === "chat" && (
           <ChatView
             messages={messages}
@@ -439,111 +456,140 @@ export default function TelegramPage() {
         )}
 
         {view === "profile" && (
-          <section className="mx-auto max-w-2xl px-5 py-7">
-            <h1 className="font-display text-2xl">Profile</h1>
+          <section className="telegram-screen">
+            <div className="telegram-screen-heading">
+              <p className="telegram-screen-kicker">Your account</p>
+              <h1>Profile</h1>
+              <p>Keep your Telegram identity and study profile simple and recognizable.</p>
+            </div>
+
             {!authenticated || !profile ? (
               <EmptyAccountState />
             ) : (
-              <div className="mt-5 space-y-4">
-                <label className="block text-sm">
-                  <span className="mb-1 block font-semibold">Display name</span>
-                  <input
-                    value={profile.displayName}
-                    onChange={(event) =>
-                      setProfile({ ...profile, displayName: event.target.value })
-                    }
-                    className="w-full rounded-xl border bg-transparent px-3 py-2"
-                  />
-                </label>
-                <label className="block text-sm">
-                  <span className="mb-1 block font-semibold">Bio</span>
-                  <textarea
-                    value={profile.bio}
-                    onChange={(event) => setProfile({ ...profile, bio: event.target.value })}
-                    rows={4}
-                    className="w-full rounded-xl border bg-transparent px-3 py-2"
-                  />
-                </label>
-                <p className="text-xs opacity-55">
-                  Telegram: {profile.username ? `@${profile.username}` : profile.telegramUserId}
-                </p>
+              <>
+                <div className="telegram-group">
+                  <label className="telegram-field-row">
+                    <span className="telegram-field-label">Display name</span>
+                    <input
+                      value={profile.displayName}
+                      onChange={(event) =>
+                        setProfile({ ...profile, displayName: event.target.value })
+                      }
+                      className="telegram-text-field"
+                      autoComplete="name"
+                    />
+                  </label>
+                  <label className="telegram-field-row">
+                    <span className="telegram-field-label">Bio</span>
+                    <textarea
+                      value={profile.bio}
+                      onChange={(event) => setProfile({ ...profile, bio: event.target.value })}
+                      rows={4}
+                      className="telegram-text-field resize-none"
+                      placeholder="A short note about your study goals"
+                    />
+                  </label>
+                  <div className="telegram-field-row">
+                    <span className="telegram-field-label">Telegram</span>
+                    <span className="telegram-account-meta">
+                      {profile.username ? `@${profile.username}` : profile.telegramUserId}
+                    </span>
+                  </div>
+                </div>
                 <SaveButton onClick={() => void saveAccount()} notice={notice} />
-              </div>
+              </>
             )}
           </section>
         )}
 
         {view === "settings" && (
-          <section className="mx-auto max-w-2xl px-5 py-7">
-            <h1 className="font-display text-2xl">Settings</h1>
+          <section className="telegram-screen">
+            <div className="telegram-screen-heading">
+              <p className="telegram-screen-kicker">Preferences</p>
+              <h1>Settings</h1>
+              <p>Control how Isnad presents sources, language support, and conversation memory.</p>
+            </div>
+
             {!authenticated || !settings ? (
               <EmptyAccountState />
             ) : (
-              <div className="mt-5 space-y-4 text-sm">
-                <SelectSetting
-                  label="Answer length"
-                  value={settings.answerLength}
-                  onChange={(value) =>
-                    setSettings({
-                      ...settings,
-                      answerLength: value as UserSettings["answerLength"],
-                    })
-                  }
-                  options={["concise", "balanced", "detailed"]}
-                />
-                <SelectSetting
-                  label="Citation depth"
-                  value={settings.citationDepth}
-                  onChange={(value) =>
-                    setSettings({
-                      ...settings,
-                      citationDepth: value as UserSettings["citationDepth"],
-                    })
-                  }
-                  options={["standard", "detailed"]}
-                />
-                <SelectSetting
-                  label="Theme"
-                  value={settings.theme}
-                  onChange={(value) =>
-                    setSettings({ ...settings, theme: value as UserSettings["theme"] })
-                  }
-                  options={["system", "light", "dark"]}
-                />
-                <ToggleSetting
-                  label="Show Arabic source text"
-                  checked={settings.showArabic}
-                  onChange={(checked) => setSettings({ ...settings, showArabic: checked })}
-                />
-                <ToggleSetting
-                  label="Include transliteration"
-                  checked={settings.transliteration}
-                  onChange={(checked) => setSettings({ ...settings, transliteration: checked })}
-                />
-                <ToggleSetting
-                  label="Conversation memory"
-                  checked={settings.memoryEnabled}
-                  onChange={(checked) => setSettings({ ...settings, memoryEnabled: checked })}
-                />
+              <>
+                <div className="telegram-group">
+                  <SelectSetting
+                    label="Answer length"
+                    hint="Choose how much detail appears by default."
+                    value={settings.answerLength}
+                    onChange={(value) =>
+                      setSettings({
+                        ...settings,
+                        answerLength: value as UserSettings["answerLength"],
+                      })
+                    }
+                    options={["concise", "balanced", "detailed"]}
+                  />
+                  <SelectSetting
+                    label="Citation depth"
+                    hint="Show standard or expanded source detail."
+                    value={settings.citationDepth}
+                    onChange={(value) =>
+                      setSettings({
+                        ...settings,
+                        citationDepth: value as UserSettings["citationDepth"],
+                      })
+                    }
+                    options={["standard", "detailed"]}
+                  />
+                  <SelectSetting
+                    label="Theme"
+                    hint="Follow Telegram or choose a fixed appearance."
+                    value={settings.theme}
+                    onChange={(value) =>
+                      setSettings({ ...settings, theme: value as UserSettings["theme"] })
+                    }
+                    options={["system", "light", "dark"]}
+                  />
+                </div>
+
+                <div className="telegram-group">
+                  <ToggleSetting
+                    label="Arabic source text"
+                    hint="Show the Arabic wording when source text is available."
+                    checked={settings.showArabic}
+                    onChange={(checked) => setSettings({ ...settings, showArabic: checked })}
+                  />
+                  <ToggleSetting
+                    label="Transliteration"
+                    hint="Include Latin-script pronunciation support."
+                    checked={settings.transliteration}
+                    onChange={(checked) => setSettings({ ...settings, transliteration: checked })}
+                  />
+                  <ToggleSetting
+                    label="Conversation memory"
+                    hint="Let Isnad use saved conversation context when available."
+                    checked={settings.memoryEnabled}
+                    onChange={(checked) => setSettings({ ...settings, memoryEnabled: checked })}
+                  />
+                </div>
+
                 <SaveButton onClick={() => void saveAccount()} notice={notice} />
-              </div>
+              </>
             )}
           </section>
         )}
       </div>
 
-      <nav
-        className="fixed inset-x-0 bottom-0 grid grid-cols-4 border-t px-2 py-2"
-        style={{ background: "var(--tg-theme-secondary-bg-color, var(--parchment-soft))" }}
-        aria-label="Mini App navigation"
-      >
-        {(["chat", "history", "profile", "settings"] as View[]).map((item) => (
+      <nav className="telegram-tabbar" aria-label="Mini App navigation">
+        {NAV_ITEMS.map((item) => (
           <button
-            key={item}
-            onClick={() => setView(item)}
-            className={`rounded-xl px-2 py-2 text-xs capitalize ${view === item ? "font-bold" : "opacity-60"}`}
+            key={item.id}
+            type="button"
+            onClick={() => selectView(item.id)}
+            className="telegram-tab"
+            data-active={view === item.id}
+            aria-current={view === item.id ? "page" : undefined}
           >
-            {item === "history" ? "saved" : item}
+            <NavIcon name={item.id} />
+            <span>{item.label}</span>
           </button>
         ))}
       </nav>
@@ -573,47 +619,38 @@ function ChatView({
   return (
     <>
       {!hasStarted ? (
-        <section className="px-5 pb-10 pt-10 text-center">
-          <div className="mb-7 flex justify-center"><IsnadChain /></div>
-          <h1 className="mx-auto max-w-2xl font-display text-2xl leading-[1.15]">
-            Ask, and trace the answer to its source.
-          </h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed opacity-70">
+        <section className="telegram-empty-chat">
+          <div className="telegram-chain-wrap"><IsnadChain /></div>
+          <p className="telegram-screen-kicker">Trace every answer</p>
+          <h1>Ask with evidence, not guesswork.</h1>
+          <p>
             Qur&apos;an first, then authentic Sunnah, the Companions, and recognized scholarship.
           </p>
-          <div className="mx-auto mt-8 flex max-w-2xl flex-wrap justify-center gap-2">
+          <div className="telegram-starter-grid">
             {STARTERS.map((starter) => (
               <button
-                key={starter}
-                onClick={() => send(starter)}
-                className="rounded-full border px-3.5 py-2 text-left text-xs sm:text-sm"
+                key={starter.question}
+                type="button"
+                onClick={() => send(starter.question)}
+                className="telegram-starter-card"
               >
-                {starter}
+                <span className="telegram-starter-label">{starter.label}</span>
+                <span className="telegram-starter-question">{starter.question}</span>
               </button>
             ))}
           </div>
         </section>
       ) : (
-        <div className="mx-auto flex max-w-2xl flex-col gap-5 px-5 py-8">
+        <div className="telegram-thread">
           {messages.map((message, index) =>
             message.role === "user" ? (
-              <div key={index} className="max-w-[85%] self-end">
-                <div
-                  className="rounded-2xl rounded-br-sm px-4 py-2.5 text-sm"
-                  style={{
-                    background: "var(--tg-theme-button-color, var(--pine))",
-                    color: "var(--tg-theme-button-text-color, var(--parchment-soft))",
-                  }}
-                >
-                  {message.content}
-                </div>
+              <div key={message.id ?? index} className="telegram-user-message">
+                <div className="telegram-user-bubble">{message.content}</div>
               </div>
             ) : message.content ? (
-              <div key={index} className="w-full self-start">
+              <div key={message.id ?? index} className="telegram-assistant-message">
                 {message.error ? (
-                  <div className="rounded-2xl border border-[#8a1f1f]/20 bg-[#fbf1f1] px-4 py-3 text-sm text-[#7a1f1f]">
-                    {message.content}
-                  </div>
+                  <div className="telegram-error-banner">{message.content}</div>
                 ) : (
                   <AnswerMessage
                     content={message.content}
@@ -635,16 +672,13 @@ function ChatView({
         </div>
       )}
 
-      <div
-        className="sticky bottom-16 px-5 py-4"
-        style={{ background: "var(--tg-theme-secondary-bg-color, var(--parchment-soft))" }}
-      >
+      <div className="telegram-composer">
         <form
           onSubmit={(event) => {
             event.preventDefault();
             send(input);
           }}
-          className="mx-auto flex max-w-2xl items-end gap-2"
+          className="telegram-composer-form"
         >
           <textarea
             value={input}
@@ -656,22 +690,20 @@ function ChatView({
               }
             }}
             rows={1}
-            placeholder="Ask a question of Islamic knowledge…"
-            className="max-h-40 flex-1 resize-none rounded-xl border bg-transparent px-4 py-2.5 text-sm"
+            placeholder="Ask Isnad…"
+            aria-label="Ask Isnad"
+            className="telegram-composer-input"
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="rounded-xl px-4 py-2.5 text-sm font-medium disabled:opacity-40"
-            style={{
-              background: "var(--tg-theme-button-color, var(--pine))",
-              color: "var(--tg-theme-button-text-color, var(--parchment-soft))",
-            }}
+            className="telegram-send-button"
+            aria-label={loading ? "Isnad is answering" : "Send question"}
           >
-            Ask
+            <NavIcon name="send" />
           </button>
         </form>
-        <p className="mx-auto mt-2 max-w-2xl text-[11px] opacity-45">
+        <p className="telegram-composer-note">
           Educational guidance, not a binding fatwa.
         </p>
       </div>
@@ -681,7 +713,7 @@ function ChatView({
 
 function EmptyAccountState() {
   return (
-    <p className="mt-4 rounded-2xl border px-4 py-3 text-sm opacity-70">
+    <p className="telegram-account-empty">
       Open this Mini App from @the_isnad_bot to use authenticated profile, history, and settings.
     </p>
   );
@@ -689,40 +721,38 @@ function EmptyAccountState() {
 
 function SaveButton({ onClick, notice }: { onClick: () => void; notice: string }) {
   return (
-    <div className="flex items-center gap-3">
-      <button
-        onClick={onClick}
-        className="rounded-xl px-4 py-2 text-sm font-semibold"
-        style={{
-          background: "var(--tg-theme-button-color, var(--pine))",
-          color: "var(--tg-theme-button-text-color, var(--parchment-soft))",
-        }}
-      >
+    <div className="telegram-actions-row">
+      <button type="button" onClick={onClick} className="telegram-primary-button">
         Save changes
       </button>
-      <span className="text-xs opacity-60">{notice}</span>
+      <span className="telegram-save-notice" aria-live="polite">{notice}</span>
     </div>
   );
 }
 
 function SelectSetting({
   label,
+  hint,
   value,
   onChange,
   options,
 }: {
   label: string;
+  hint: string;
   value: string;
   onChange: (value: string) => void;
   options: string[];
 }) {
   return (
-    <label className="block">
-      <span className="mb-1 block font-semibold">{label}</span>
+    <label className="telegram-setting-row">
+      <div>
+        <span className="telegram-setting-copy">{label}</span>
+        <span className="telegram-setting-hint block">{hint}</span>
+      </div>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-xl border bg-transparent px-3 py-2 capitalize"
+        className="telegram-select"
       >
         {options.map((option) => (
           <option key={option} value={option}>{option}</option>
@@ -734,24 +764,58 @@ function SelectSetting({
 
 function ToggleSetting({
   label,
+  hint,
   checked,
   onChange,
 }: {
   label: string;
+  hint: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex items-center justify-between rounded-xl border px-3 py-3">
-      <span className="font-semibold">{label}</span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="h-5 w-5"
-      />
+    <label className="telegram-setting-row">
+      <div>
+        <span className="telegram-setting-copy">{label}</span>
+        <span className="telegram-setting-hint block">{hint}</span>
+      </div>
+      <span>
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(event) => onChange(event.target.checked)}
+          className="telegram-switch-input"
+        />
+        <span className="telegram-switch" aria-hidden="true" />
+      </span>
     </label>
   );
+}
+
+function NavIcon({ name }: { name: View | "new" | "send" }) {
+  const common = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  if (name === "chat") {
+    return <svg viewBox="0 0 24 24" aria-hidden="true" {...common}><path d="M7.5 18.5 4 20l1.1-3.7A8 8 0 1 1 7.5 18.5Z" /><path d="M8 11h8M8 14h5" /></svg>;
+  }
+  if (name === "history") {
+    return <svg viewBox="0 0 24 24" aria-hidden="true" {...common}><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z" /></svg>;
+  }
+  if (name === "profile") {
+    return <svg viewBox="0 0 24 24" aria-hidden="true" {...common}><circle cx="12" cy="8" r="3.5" /><path d="M5.5 20c.7-3.7 3-5.5 6.5-5.5s5.8 1.8 6.5 5.5" /></svg>;
+  }
+  if (name === "settings") {
+    return <svg viewBox="0 0 24 24" aria-hidden="true" {...common}><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6" /></svg>;
+  }
+  if (name === "new") {
+    return <svg viewBox="0 0 24 24" aria-hidden="true" {...common}><path d="M12 5v14M5 12h14" /></svg>;
+  }
+  return <svg viewBox="0 0 24 24" aria-hidden="true" {...common}><path d="m5 12 14-7-4.5 14-3-5.5L5 12Z" /><path d="m11.5 13.5 3.5-3.5" /></svg>;
 }
 
 function applyThemeParams(element: HTMLElement | null, themeParams: object | undefined) {
