@@ -44,3 +44,43 @@ export function navigateBackInsideTelegram(fallback = "/telegram") {
 
   window.location.assign(fallback);
 }
+
+
+type TelegramChromeApp = {
+  isFullscreen?: boolean;
+  themeParams?: {
+    bg_color?: string;
+    secondary_bg_color?: string;
+  };
+  onEvent: (event: "fullscreenChanged" | "safeAreaChanged" | "contentSafeAreaChanged", callback: () => void) => void;
+  offEvent: (event: "fullscreenChanged" | "safeAreaChanged" | "contentSafeAreaChanged", callback: () => void) => void;
+  setHeaderColor?: (color: string) => void;
+  setBackgroundColor?: (color: string) => void;
+  setBottomBarColor?: (color: string) => void;
+};
+
+export function bindTelegramChromeState(element: HTMLElement, app: TelegramChromeApp) {
+  const sync = () => {
+    element.dataset.fullscreen = app.isFullscreen ? "true" : "false";
+
+    const background = app.themeParams?.bg_color;
+    const secondary = app.themeParams?.secondary_bg_color ?? background;
+    if (background) {
+      app.setHeaderColor?.(background);
+      app.setBackgroundColor?.(background);
+    }
+    if (secondary) app.setBottomBarColor?.(secondary);
+  };
+
+  sync();
+  app.onEvent("fullscreenChanged", sync);
+  app.onEvent("safeAreaChanged", sync);
+  app.onEvent("contentSafeAreaChanged", sync);
+
+  return () => {
+    app.offEvent("fullscreenChanged", sync);
+    app.offEvent("safeAreaChanged", sync);
+    app.offEvent("contentSafeAreaChanged", sync);
+    delete element.dataset.fullscreen;
+  };
+}
