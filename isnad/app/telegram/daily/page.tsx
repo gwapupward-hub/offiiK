@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import DailyKnowledge from "@/components/DailyKnowledge";
-import { bindTelegramViewport, navigateBackInsideTelegram } from "@/lib/telegramMiniApp";
+import { bindTelegramChromeState, bindTelegramViewport, navigateBackInsideTelegram } from "@/lib/telegramMiniApp";
 
 type WebAppSdk = (typeof import("@twa-dev/sdk"))["default"];
 
@@ -27,6 +28,7 @@ export default function TelegramDailyPage() {
     let cancelled = false;
     let app: WebAppSdk | null = null;
     let themeHandler: (() => void) | null = null;
+    let chromeCleanup: (() => void) | null = null;
     const goBack = () => {
       navigateBackInsideTelegram();
     };
@@ -41,6 +43,12 @@ export default function TelegramDailyPage() {
         WebApp.BackButton.show();
         WebApp.BackButton.onClick(goBack);
         initDataRef.current = WebApp.initData ?? "";
+        if (containerRef.current) {
+          chromeCleanup = bindTelegramChromeState(
+            containerRef.current,
+            WebApp as Parameters<typeof bindTelegramChromeState>[1]
+          );
+        }
 
         const syncTheme = () => applyThemeParams(containerRef.current, WebApp.themeParams);
         themeHandler = syncTheme;
@@ -54,6 +62,7 @@ export default function TelegramDailyPage() {
       cancelled = true;
       if (app && themeHandler) app.offEvent("themeChanged", themeHandler);
       app?.BackButton.offClick(goBack);
+      chromeCleanup?.();
       app?.BackButton.hide();
     };
   }, []);
@@ -72,12 +81,12 @@ export default function TelegramDailyPage() {
         </div>
 
         <div className="telegram-route-pills" aria-label="Related sections">
-            <a href="/telegram/learn" className="telegram-route-pill">
+            <Link href="/telegram/learn" prefetch className="telegram-route-pill">
               Guided learning
-            </a>
-            <a href="/telegram/library" className="telegram-route-pill">
+            </Link>
+            <Link href="/telegram/library" prefetch className="telegram-route-pill">
               Bookmarks & notes
-            </a>
+            </Link>
         </div>
       </header>
 
