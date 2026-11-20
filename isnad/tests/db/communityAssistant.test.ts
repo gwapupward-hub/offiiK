@@ -118,6 +118,66 @@ test("C1 scoped group Q&A persists only local interactions and obeys pause", {
   assert.equal(Number(rows.find((row) => row.community_id === communityIds[0])?.count), 2);
   assert.equal(Number(rows.find((row) => row.community_id === communityIds[1])?.count), 1);
 
+  // A staging-equivalent webhook simulation: authenticated ingress -> durable
+  // inbox -> AI route -> mocked Telegram, with no live bot or model calls.
+  const { ingestTelegramWebhook } = await import("@/lib/community/webhookIngress");
+  const { processInboxUpdate } = await import("@/lib/community/updateProcessor");
+  Object.assign(process.env, {
+    TELEGRAM_BOT_TOKEN: "123456:STAGING-TEST-TOKEN",
+    TELEGRAM_WEBHOOK_SECRET: "C1-Test-Webhook-Secret",
+    TELEGRAM_BOT_USERNAME: "isnad_test_bot",
+  });
+  async function deliver(kind: "message" | "channel_post", text: string, chat = GROUP) {
+    const id = 9000 + updateId++;
+    const message = { message_id: messageId++, chat, from: USER, text };
+    const result = await ingestTelegramWebhook(new Request("http://localhost/api/telegram/webhook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-telegram-bot-api-secret-token": "C1-Test-Webhook-Secret" },
+      body: JSON.stringify({ update_id: id, [kind]: message }),
+    }));
+    assert.equal(result.response.status, 200);
+    return id;
+  }
+  const ignoredId = await deliver("message", "ordinary group chatter");
+  const [ignored] = await sql.unsafe<Array<{ status: string; has_payload: boolean }>>(
+    "SELECT status, payload IS NOT NULL AS has_payload FROM telegram_inbox WHERE update_id = $1", [ignoredId]
+  );
+  assert.equal(ignored.status, "succeeded");
+  assert.equal(ignored.has_payload, false, "ordinary chatter must not be stored");
+
+  const mentionedId = await deliver("message", "@isnad_test_bot please explain ihsan");
+  const [retained] = await sql.unsafe<Array<{ status: string; has_payload: boolean }>>(
+    "SELECT status, payload IS NOT NULL AS has_payload FROM telegram_inbox WHERE update_id = $1", [mentionedId]
+  );
+  assert.equal(retained.status, "pending");
+  assert.equal(retained.has_payload, true, "explicit mention is eligible for processing");
+  const before = telegram.sent.length;
+  const result = await processInboxUpdate(mentionedId, {
+    token: "123456:STAGING-TEST-TOKEN", client: telegram,
+    generateGroup: async (_prompt, messages) => {
+      assert.doesNotMatch(messages.map(x => x.content).join(" "), /PRIVATE SECRET/);
+      return "The Ihsan hadith teaches worship with excellence."; 
+    },
+  });
+  assert.equal(result, "succeeded");
+  assert.equal(telegram.sent.length, before + 1);
+  assert.equal(telegram.sent.at(-1)?.chat_id, GROUP.id);
+  assert.match(telegram.sent.at(-1)!.text, /Ihsan hadith/);
+  const duplicate = await processInboxUpdate(mentionedId, {
+    token: "123456:STAGING-TEST-TOKEN", client: telegram,
+    generateGroup: async () => "This must not send twice",
+  });
+  assert.equal(duplicate, "skipped");
+  assert.equal(telegram.sent.length, before + 1);
+
+  // Replay as a channel update: the assistant must not ingest/channel-respond.
+  const channelId = await deliver("channel_post", "/ask religious question");
+  const [channel] = await sql.unsafe<Array<{ status: string; has_payload: boolean }>>(
+    "SELECT status, payload IS NOT NULL AS has_payload FROM telegram_inbox WHERE update_id = $1", [channelId]
+  );
+  assert.equal(channel.status, "succeeded");
+  assert.equal(channel.has_payload, false);
+
   await sql.unsafe("UPDATE communities SET status = 'paused' WHERE id = $1", [communityIds[0]]);
   await ask(GROUP, "Why is Isnad silent?");
   assert.equal(telegram.sent.length, 3, "paused communities never reply");
