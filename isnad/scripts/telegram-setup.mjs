@@ -45,7 +45,10 @@ const commands = [
 ];
 
 // Scoped command menus so group members never see private-only commands.
-const groupCommands = [{ command: "help", description: "How Isnad works in this community" }];
+const groupCommands = [
+  { command: "help", description: "How Isnad works in this community" },
+  { command: "ask", description: "Ask Isnad an Islamic question" },
+];
 const groupAdminCommands = [
   { command: "setup", description: "Connect this community to Isnad" },
   { command: "community", description: "Open the Community Manager" },
