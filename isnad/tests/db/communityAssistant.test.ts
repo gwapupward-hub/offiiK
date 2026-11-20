@@ -42,18 +42,17 @@ test("C1 scoped group Q&A persists only local interactions and obeys pause", {
     );
     const id = row.id;
     communityIds.push(id);
-    await sql.unsafe(
-      "INSERT INTO community_settings " +
-      "(community_id, assistant_config, verification_config, publisher_config, learning_config) " +
-      "VALUES ($1, $2::jsonb, $3::jsonb, $4::jsonb, $5::jsonb)",
-      [
-        id,
-        JSON.stringify(settings.assistant),
-        JSON.stringify(settings.verification),
-        JSON.stringify(settings.publisher),
-        JSON.stringify(settings.learning),
-      ]
-    );
+    await sql`
+      INSERT INTO community_settings
+      (community_id, assistant_config, verification_config, publisher_config, learning_config)
+      VALUES (
+        ${id},
+        ${sql.json(settings.assistant as never)},
+        ${sql.json(settings.verification as never)},
+        ${sql.json(settings.publisher as never)},
+        ${sql.json(settings.learning as never)}
+      )
+    `;
   }
 
   const { getCommunityByChatId, getCommunitySettings } = await import("@/lib/community/communityRegistry");
