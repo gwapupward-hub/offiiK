@@ -35,7 +35,10 @@ export function assistantTriggerAllowed(config: AssistantConfig, route: GroupAss
     case "mention":
       return true;
     case "reply":
-      return config.responseMode === "mention_and_reply";
+      return config.responseMode === "mention_and_reply" ||
+        (config.responseMode === "qa_topics" && route.message.is_topic_message === true &&
+          typeof route.message.message_thread_id === "number" &&
+          config.qaTopicIds.includes(route.message.message_thread_id));
     case "topic":
       return config.responseMode === "qa_topics" &&
         route.message.is_topic_message === true &&
@@ -90,6 +93,12 @@ export async function executeGroupAssistantRoute(
       config.cooldownSeconds
     )).allowed;
   if (!cooldown) return;
+  const minute = await consumeRateLimit(
+    rateLimitKey("isn-c1-minute:" + community.id),
+    15,
+    60
+  );
+  if (!minute.allowed) return;
   const hourly = await consumeRateLimit(
     rateLimitKey("isn-c1-hour:" + community.id),
     config.maxRepliesPerHour,
@@ -117,7 +126,6 @@ export async function executeGroupAssistantRoute(
     language: config.responseLanguage === "auto" ? (sender.language_code || "en") : config.responseLanguage,
     answerLength: config.answerLength,
     memoryEnabled: false,
-    citationDepth: config.showSources ? "standard" as const : "standard" as const,
   };
   const prompt = buildConfiguredPrompt(question, preferences);
   const answer = (await (deps.generate ?? generateAnswer)(prompt, messages)).trim();
