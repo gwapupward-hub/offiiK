@@ -56,6 +56,12 @@ test("C1 scoped group Q&A persists only local interactions and obeys pause", {
     );
   }
 
+  const { getCommunityByChatId, getCommunitySettings } = await import("@/lib/community/communityRegistry");
+  const saved = await getCommunityByChatId(GROUP.id);
+  assert.ok(saved);
+  const effective = await getCommunitySettings(saved);
+  assert.equal(effective.assistant.cooldownSeconds, 0, "zero cooldown must survive settings persistence");
+
   const userId = await upsertTelegramIdentity(USER);
   const privateConversation = await createConversation(userId!, "telegram", "PRIVATE SECRET");
   await saveMessage({ conversationId: privateConversation.id, role: "user", content: "PRIVATE SECRET" });
