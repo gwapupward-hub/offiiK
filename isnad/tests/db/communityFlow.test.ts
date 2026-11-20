@@ -340,7 +340,7 @@ test("community onboarding and administration", { skip: !url && "TEST_DATABASE_U
     assert.deepEqual(body.error.modules.map((m: { key: string }) => m.key), ["assistant"]);
   });
 
-  await t.test("activation succeeds after the permission is granted, and the bot stays silent", async () => {
+  await t.test("activation respects runtime gates and ignores ordinary group chatter", async () => {
     telegram.setMember(GROUP.id, BOT_ID, { status: "administrator" });
     const recheck = await permissionsRoute.GET(api(`/api/v1/communities/${communityId}/permissions`, OWNER), ctx(communityId));
     assert.equal((await recheck.json()).community.activation.ready, true);
@@ -358,10 +358,10 @@ test("community onboarding and administration", { skip: !url && "TEST_DATABASE_U
     assert.equal(response.status, 200);
     const { community } = await response.json();
     assert.equal(community.status, "active");
-    assert.ok(community.modules.every((m: { state: string }) => m.state !== "ready"), "no module runtime ships in C0");
+    assert.equal(community.modules.find((m: { key: string; state: string }) => m.key === "assistant")?.state, "ready");
+    assert.ok(community.modules.filter((m: { key: string }) => m.key !== "assistant").every((m: { state: string }) => m.state !== "ready"));
 
     telegram.reset();
-    await groupText(MEMBER, "@isnad_test_bot is music permissible?");
     await groupText(MEMBER, "general chatter");
     assert.equal(telegram.sent.length, 0);
   });

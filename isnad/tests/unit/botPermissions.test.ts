@@ -52,8 +52,10 @@ test("pending, paused and globally paused communities never act", () => {
   assert.equal(states(evaluateModules("supergroup", "active", groupSettings, groupAdmin, { globalPause: true })).publisher, "paused");
 });
 
-test("in C0 no module runtime is released, so nothing may act even when active", () => {
-  for (const key of MODULE_KEYS) {
+test("C1 releases only the assistant runtime; other community modules remain gated", () => {
+  assert.equal(MODULE_RUNTIME_RELEASED.assistant, true);
+  assert.equal(moduleMayAct("assistant", "supergroup", "active", groupSettings, groupAdmin, { globalPause: false }), true);
+  for (const key of MODULE_KEYS.filter((item) => item !== "assistant")) {
     assert.equal(MODULE_RUNTIME_RELEASED[key], false);
     assert.equal(moduleMayAct(key, "supergroup", "active", groupSettings, groupAdmin, { globalPause: false }), false);
   }

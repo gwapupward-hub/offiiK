@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto";
 import { databaseConfigured } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { executeCommunityRoute } from "@/lib/community/communityCommands";
-import { communityFeaturesEnabled } from "@/lib/community/featureFlags";
+import { executeGroupAssistantRoute } from "@/lib/community/communityAssistant";
+import { communityFeaturesEnabled, MODULE_RUNTIME_RELEASED } from "@/lib/community/featureFlags";
 import {
   getTelegramClient,
   resolveBotUsername,
@@ -25,6 +26,7 @@ import {
   type InboxStatus,
 } from "@/lib/community/telegramInbox";
 import { handleTelegramUpdate, sendMessage, type TelegramUpdate as PrivateUpdate } from "@/lib/telegramBot";
+import type { ChatMessage } from "@/lib/providers";
 
 const PRIVATE_FAILURE_TEXT = "Something went wrong answering that. Please try again in a moment.";
 
@@ -42,6 +44,8 @@ export type ExecuteDeps = {
   token: string;
   client: TelegramClient;
   handlePrivate?: (token: string, update: TelegramUpdate) => Promise<void>;
+  /** Test-only injection seam to exercise ingress -> inbox -> group AI without an external model. */
+  generateGroup?: (prompt: string, messages: ChatMessage[]) => Promise<string>;
 };
 
 /** Classifies and runs one update. Throws on failure so the caller can record it. */
@@ -50,7 +54,7 @@ export async function executeUpdate(update: TelegramUpdate, deps: ExecuteDeps, h
   const route = classifyUpdate(
     update,
     { id: deps.client.botId, username },
-    { communityEnabled: communityRuntimeEnabled() }
+    { communityEnabled: communityRuntimeEnabled(), assistantReleased: MODULE_RUNTIME_RELEASED.assistant }
   );
 
   if (route.kind === "private") {
@@ -59,6 +63,14 @@ export async function executeUpdate(update: TelegramUpdate, deps: ExecuteDeps, h
     const handlePrivate =
       deps.handlePrivate ?? ((token, value) => handleTelegramUpdate(token, value as unknown as PrivateUpdate));
     await handlePrivate(deps.token, update);
+    return route;
+  }
+
+  if (route.kind === "group_assistant") {
+    await executeGroupAssistantRoute(route, { client: deps.client, generate: deps.generateGroup }, {
+      markSideEffect: hooks.markSideEffect,
+      releaseSideEffect: hooks.releaseSideEffect,
+    });
     return route;
   }
 
@@ -105,7 +117,7 @@ export async function processInboxUpdate(
   const correlationId = randomUUID();
 
   try {
-    const route = await executeUpdate(update, { token, client, handlePrivate: deps?.handlePrivate }, {
+    const route = await executeUpdate(update, { token, client, handlePrivate: deps?.handlePrivate, generateGroup: deps?.generateGroup }, {
       correlationId,
       markSideEffect: () => markSideEffectStarted(updateId),
       releaseSideEffect: () => releaseSideEffect(updateId),

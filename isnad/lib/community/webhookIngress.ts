@@ -2,9 +2,12 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { databaseConfigured } from "@/lib/db";
 import { logger } from "@/lib/logger";
-import { isProductionRuntime } from "@/lib/community/featureFlags";
+import { communityGlobalPause, isProductionRuntime, MODULE_RUNTIME_RELEASED } from "@/lib/community/featureFlags";
+import { getCommunityByChatId, getCommunitySettings } from "@/lib/community/communityRegistry";
+import { botIdFromToken } from "@/lib/community/telegramApi";
 import {
   shouldRetainPayload,
+  mentionedQuestion,
   updateChatId,
   updateKind,
   type TelegramUpdate,
@@ -83,7 +86,49 @@ export async function ingestTelegramWebhook(
     };
   }
 
-  const retainPayload = shouldRetainPayload(update, { communityEnabled: communityRuntimeEnabled() });
+  const communityEnabled = communityRuntimeEnabled();
+  // Fail closed for @mentions when a staging bot uses a different identity.
+  // An explicit /ask remains supported; the bot username must be configured
+  // before free-text @mentions are retained from group conversations.
+  const botUsername = env.TELEGRAM_BOT_USERNAME?.replace(/^@/, "").trim() || undefined;
+  let retainPayload = shouldRetainPayload(update, {
+    communityEnabled,
+    assistantReleased: MODULE_RUNTIME_RELEASED.assistant,
+    botId: botIdFromToken(token),
+    botUsername,
+  });
+
+  // Privacy boundary: non-command group text is retained only when the active
+  // community explicitly permits its mention, reply or configured Q&A topic.
+  const message = update.message;
+  if (communityEnabled && MODULE_RUNTIME_RELEASED.assistant &&
+    message && (message.chat.type === "group" || message.chat.type === "supergroup") &&
+    message.text?.trim() && !message.text.trim().startsWith("/")) {
+    try {
+      const community = await getCommunityByChatId(message.chat.id);
+      if (!community || community.status !== "active" || communityGlobalPause(env) || message.from?.is_bot || message.sender_chat || message.via_bot) {
+        retainPayload = false;
+      } else {
+        const config = (await getCommunitySettings(community)).assistant;
+        const explicit = Boolean(mentionedQuestion(message.text, botUsername ?? null));
+        const repliedToBot = message.reply_to_message?.from?.id === botIdFromToken(token);
+        const inQaTopic = message.is_topic_message === true &&
+          typeof message.message_thread_id === "number" &&
+          config.qaTopicIds.includes(message.message_thread_id);
+        retainPayload = config.enabled && (
+          explicit ||
+          (config.responseMode === "mention_and_reply" && repliedToBot) ||
+          (config.responseMode === "qa_topics" && inQaTopic)
+        );
+      }
+    } catch (error) {
+      logger.error("community_trigger_filter_failed", {
+        updateId: update.update_id,
+        errorCode: (error as { code?: string })?.code ?? "unknown",
+      });
+      return { response: NextResponse.json({ error: "storage_unavailable" }, { status: 503 }) };
+    }
+  }
   let persisted;
   try {
     persisted = await persistUpdate({

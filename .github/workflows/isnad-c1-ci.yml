@@ -1,0 +1,60 @@
+name: Isnad C1 validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "isnad/**"
+      - ".github/workflows/isnad-c1-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: isnad_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d isnad_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    defaults:
+      run:
+        working-directory: isnad
+    env:
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/isnad_test
+      TELEGRAM_BOT_TOKEN: "123456:TEST-TOKEN"
+      TELEGRAM_WEBHOOK_SECRET: "ci-webhook-secret"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: isnad/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:db
+      - run: npm run build
+      - name: Lint C1 changed source and tests
+        run: >-
+          npx eslint
+          lib/community/communityAssistant.ts
+          lib/community/telegramDispatcher.ts
+          lib/community/updateProcessor.ts
+          lib/community/webhookIngress.ts
+          tests/unit/communityAssistant.test.ts
+          tests/db/communityAssistant.test.ts
+          tests/unit/botPermissions.test.ts

@@ -159,12 +159,21 @@ export type Route =
   | { kind: "group_help"; message: TelegramMessage }
   | { kind: "group_private_only_notice"; command: string; message: TelegramMessage }
   | { kind: "group_module_unavailable"; command: string; message: TelegramMessage }
+  | { kind: "group_assistant"; trigger: "command" | "mention" | "reply" | "topic"; question: string; message: TelegramMessage }
   | { kind: "group_chat_migrated"; fromChatId: number; toChatId: number }
   | { kind: "bot_membership"; change: ChatMemberUpdated }
   | { kind: "member_rights"; change: ChatMemberUpdated }
   | { kind: "ignore"; reason: IgnoreReason };
 
 const ignore = (reason: IgnoreReason): Route => ({ kind: "ignore", reason });
+
+/** Matches an explicit @bot mention, never an arbitrary @user or substring. */
+export function mentionedQuestion(text: string, username: string | null): string | null {
+  if (!username || !/^[A-Za-z0-9_]+$/.test(username)) return null;
+  const mention = new RegExp("(^|\\s)@" + username + "(?=$|[^A-Za-z0-9_])", "gi");
+  if (!mention.test(text)) return null;
+  return text.replace(mention, "$1").trim();
+}
 
 function isGroup(chat: TelegramChatRef | undefined): boolean {
   return chat?.type === "group" || chat?.type === "supergroup";
@@ -178,7 +187,7 @@ function isGroup(chat: TelegramChatRef | undefined): boolean {
 export function classifyUpdate(
   update: TelegramUpdate,
   bot: BotRef,
-  options: { communityEnabled: boolean }
+  options: { communityEnabled: boolean; assistantReleased?: boolean }
 ): Route {
   if (update.my_chat_member) {
     const change = update.my_chat_member;
@@ -227,7 +236,19 @@ export function classifyUpdate(
   if (message.via_bot) return ignore("bot_sender");
 
   const command = parseAddressedCommand(message.text?.trim());
-  if (!command) return ignore("group_message_not_triggering");
+  if (!command) {
+    if (!options.assistantReleased || !message.text?.trim()) return ignore("group_message_not_triggering");
+    const mentionQuestion = mentionedQuestion(message.text, bot.username);
+    if (mentionQuestion) return { kind: "group_assistant", trigger: "mention", question: mentionQuestion, message };
+    if (bot.id > 0 && message.reply_to_message?.from?.id === bot.id) {
+      return { kind: "group_assistant", trigger: "reply", question: message.text.trim(), message };
+    }
+    if (message.is_topic_message && typeof message.message_thread_id === "number") {
+      // Community-specific topic IDs are checked again by the assistant service.
+      return { kind: "group_assistant", trigger: "topic", question: message.text.trim(), message };
+    }
+    return ignore("group_message_not_triggering");
+  }
 
   if (command.target) {
     if (!bot.username || command.target.toLowerCase() !== bot.username.toLowerCase()) {
@@ -246,6 +267,9 @@ export function classifyUpdate(
       message,
     };
   }
+  if (options.assistantReleased && command.command === "ask") {
+    return { kind: "group_assistant", trigger: "command", question: command.args, message };
+  }
   if (!addressed) return ignore("unaddressed_command");
   if (command.command === "help") return { kind: "group_help", message };
   if (PRIVATE_ONLY_COMMANDS.has(command.command)) {
@@ -262,7 +286,7 @@ export function classifyUpdate(
  * Ordinary group chatter and channel posts are never retained. Must be a
  * superset of what classifyUpdate routes to a handler (see tests).
  */
-export function shouldRetainPayload(update: TelegramUpdate, options: { communityEnabled: boolean }): boolean {
+export function shouldRetainPayload(update: TelegramUpdate, options: { communityEnabled: boolean; assistantReleased?: boolean; botId?: number; botUsername?: string }): boolean {
   if (update.my_chat_member || update.chat_member) return options.communityEnabled;
   if (update.channel_post || update.edited_channel_post) return false;
   if (update.callback_query || update.poll || update.poll_answer) return false;
@@ -271,14 +295,17 @@ export function shouldRetainPayload(update: TelegramUpdate, options: { community
   if (message.chat.type === "private") return true;
   if (!isGroup(message.chat) || !options.communityEnabled || update.edited_message) return false;
   if (typeof message.migrate_to_chat_id === "number") return true;
-  return Boolean(message.text?.trim().startsWith("/"));
+  if (message.text?.trim().startsWith("/")) return true;
+  if (!options.assistantReleased || message.from?.is_bot || message.sender_chat || message.via_bot) return false;
+  if (message.text && mentionedQuestion(message.text, options.botUsername ?? null)) return true;
+  return Boolean(options.botId && message.reply_to_message?.from?.id === options.botId && message.text?.trim());
 }
 
 /** Whether classifying this update needs the bot username (an `@target` group command). */
 export function needsBotUsername(update: TelegramUpdate): boolean {
   const message = update.message;
   if (!message || !isGroup(message.chat)) return false;
-  return parseAddressedCommand(message.text?.trim())?.target != null;
+  return parseAddressedCommand(message.text?.trim())?.target != null || Boolean(message.text?.includes("@"));
 }
 
 /** Reply parameters that keep a response in the right chat, thread and forum topic. */
