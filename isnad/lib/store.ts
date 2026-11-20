@@ -409,16 +409,6 @@ export async function latestCitations(userId: string): Promise<CitationRecord[]>
   }));
 }
 
-export async function reserveTelegramUpdate(updateId: number): Promise<boolean> {
-  if (!databaseConfigured()) return true;
-  const sql = getDatabase();
-  const rows = await sql`
-    INSERT INTO processed_telegram_updates (update_id)
-    VALUES (${updateId}) ON CONFLICT DO NOTHING RETURNING update_id
-  `;
-  return rows.length > 0;
-}
-
 export async function recordEvent(
   eventName: string,
   userId: string | null,

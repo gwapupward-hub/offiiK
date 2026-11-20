@@ -107,8 +107,10 @@ Never commit bot tokens, webhook secrets, OpenAI keys, or database credentials.
 - `GET/PATCH /api/account` — authenticated Telegram profile and settings.
 - `GET/POST /api/conversations` — list or create conversations.
 - `GET/DELETE /api/conversations/:id` — read or archive an owned conversation.
-- `POST /api/telegram/webhook` — Telegram bot updates.
+- `POST /api/telegram/webhook` — Telegram bot updates (authenticated, persisted to a durable inbox before acknowledgement).
 - `GET /api/health` — configuration and database readiness.
+- `/api/v1/communities/*` — Community Admin Control Center (behind `ISNAD_COMMUNITY_ENABLED`). See [docs/community/c0-foundation.md](docs/community/c0-foundation.md).
+- `GET /api/internal/telegram-inbox` — inbox retries and retention (`Authorization: Bearer $CRON_SECRET`).
 
 Account and conversation endpoints require a valid `X-Telegram-Init-Data` header and reject unsigned requests.
 
@@ -117,8 +119,16 @@ Account and conversation endpoints require a valid `X-Telegram-Init-Data` header
 ```bash
 npm run typecheck
 npm run lint
+npm test                                   # unit tests
+TEST_DATABASE_URL=postgres://…/isnad_test npm run test:db   # integration tests (disposable DB)
 npm run build
 ```
+
+`test:db` drops and rebuilds the `public` schema of `TEST_DATABASE_URL`, and refuses to run unless the database name contains `test`.
+
+## Community Admin Control Center
+
+Isnad can be installed in Telegram groups, supergroups and channels and managed from the Mini App at `/telegram/community`. Group messages never reach the private conversation workflow, and the bot stays silent in a community until a verified administrator activates it. The feature is off unless `ISNAD_COMMUNITY_ENABLED=true`. Architecture, API contracts, rollout and rollback: [docs/community/c0-foundation.md](docs/community/c0-foundation.md).
 
 ## Editing knowledge modules
 

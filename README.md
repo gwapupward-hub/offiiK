@@ -107,6 +107,9 @@ Open [http://localhost:3000](http://localhost:3000).
 | `TELEGRAM_WEBHOOK_SECRET` | For the bot webhook | Verifies that webhook requests came through Telegram |
 | `PUBLIC_BASE_URL` | For Telegram setup | `https://www.isnadsunnah.site` |
 | `TELEGRAM_MINI_APP_URL` | For the Mini App menu | `https://www.isnadsunnah.site/telegram` |
+| `ISNAD_COMMUNITY_ENABLED` | No (off by default) | Enables the Community Admin Control Center; see [`isnad/docs/community/c0-foundation.md`](isnad/docs/community/c0-foundation.md) |
+| `ISNAD_COMMUNITY_GLOBAL_PAUSE` | No | Operator kill switch for all community automation |
+| `CRON_SECRET` | For inbox retries | Protects `GET /api/internal/telegram-inbox` |
 
 Never commit `.env.local` or expose these values to browser code.
 
@@ -120,6 +123,8 @@ Run commands from `isnad/`.
 | `npm run build` | Create a production build |
 | `npm start` | Run the production server |
 | `npm run lint` | Run ESLint |
+| `npm test` | Run unit tests |
+| `npm run test:db` | Run integration tests against `TEST_DATABASE_URL` (a disposable database) |
 | `npm run telegram:setup -- <base-url>` | Register bot commands, webhook, and Mini App menu button |
 
 ## Telegram setup

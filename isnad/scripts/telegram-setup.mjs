@@ -5,6 +5,10 @@ import { SITE_URL } from "../site.config.mjs";
 const args = process.argv.slice(2);
 const vercelBuild = args.includes("--vercel-build");
 const dropPendingUpdates = args.includes("--drop-pending");
+const resetCommunityScopes = args.includes("--reset-community-commands");
+// Community onboarding registers extra update types and scoped commands. It is
+// opt-in so that deploying this code does not change the production bot.
+const communityEnabled = process.env.ISNAD_COMMUNITY_ENABLED === "true";
 const positionalBaseUrl = args.find((arg) => !arg.startsWith("--"));
 
 if (vercelBuild && process.env.VERCEL_ENV !== "production") {
@@ -35,7 +39,24 @@ const commands = [
   { command: "history", description: "Show recent conversations" },
   { command: "sources", description: "Show sources from the last answer" },
   { command: "settings", description: "View answer and memory settings" },
+  ...(communityEnabled
+    ? [{ command: "community", description: "Manage groups and channels you administer" }]
+    : []),
 ];
+
+// Scoped command menus so group members never see private-only commands.
+const groupCommands = [{ command: "help", description: "How Isnad works in this community" }];
+const groupAdminCommands = [
+  { command: "setup", description: "Connect this community to Isnad" },
+  { command: "community", description: "Open the Community Manager" },
+  { command: "pause", description: "Pause all Isnad activity here" },
+  { command: "resume", description: "Resume after a permission check" },
+  { command: "help", description: "How Isnad works in this community" },
+];
+
+const allowedUpdates = communityEnabled
+  ? ["message", "edited_message", "my_chat_member", "chat_member"]
+  : ["message", "edited_message"];
 
 function fail(message) {
   console.error(`✗ ${message}`);
@@ -76,10 +97,23 @@ async function main() {
   }
   console.log(`✓ Registered and verified ${registeredCommands.length} commands.`);
 
+  if (communityEnabled) {
+    await callApi("setMyCommands", { commands: groupCommands, scope: { type: "all_group_chats" } });
+    await callApi("setMyCommands", {
+      commands: groupAdminCommands,
+      scope: { type: "all_chat_administrators" },
+    });
+    console.log("✓ Registered scoped group and administrator commands.");
+  } else if (resetCommunityScopes) {
+    await callApi("deleteMyCommands", { scope: { type: "all_group_chats" } });
+    await callApi("deleteMyCommands", { scope: { type: "all_chat_administrators" } });
+    console.log("✓ Removed scoped community commands.");
+  }
+
   await callApi("setWebhook", {
     url: webhookUrl,
     secret_token: secret,
-    allowed_updates: ["message", "edited_message"],
+    allowed_updates: allowedUpdates,
     drop_pending_updates: dropPendingUpdates,
   });
 
@@ -88,6 +122,7 @@ async function main() {
     fail(`Telegram webhook verification failed. Expected ${webhookUrl}.`);
   }
   console.log(`✓ Webhook registered and verified at ${webhookUrl}`);
+  console.log(`  Allowed updates: ${allowedUpdates.join(", ")}`);
   console.log(`  Pending updates: ${Number(webhookInfo.pending_update_count || 0)}`);
   if (webhookInfo.last_error_message) {
     console.warn(`  Previous delivery error: ${webhookInfo.last_error_message}`);
