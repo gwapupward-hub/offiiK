@@ -2,7 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { databaseConfigured } from "@/lib/db";
 import { logger } from "@/lib/logger";
-import { isProductionRuntime, MODULE_RUNTIME_RELEASED } from "@/lib/community/featureFlags";
+import { communityGlobalPause, isProductionRuntime, MODULE_RUNTIME_RELEASED } from "@/lib/community/featureFlags";
 import { getCommunityByChatId, getCommunitySettings } from "@/lib/community/communityRegistry";
 import { botIdFromToken } from "@/lib/community/telegramApi";
 import {
@@ -106,7 +106,7 @@ export async function ingestTelegramWebhook(
     message.text?.trim() && !message.text.trim().startsWith("/")) {
     try {
       const community = await getCommunityByChatId(message.chat.id);
-      if (!community || community.status !== "active" || message.from?.is_bot || message.sender_chat || message.via_bot) {
+      if (!community || community.status !== "active" || communityGlobalPause(env) || message.from?.is_bot || message.sender_chat || message.via_bot) {
         retainPayload = false;
       } else {
         const config = (await getCommunitySettings(community)).assistant;
