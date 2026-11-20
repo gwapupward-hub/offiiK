@@ -179,6 +179,7 @@ test("C1 scoped group Q&A persists only local interactions and obeys pause", {
   assert.equal(channel.has_payload, false);
 
   await sql.unsafe("UPDATE communities SET status = 'paused' WHERE id = $1", [communityIds[0]]);
+  const sentBeforePauseCheck = telegram.sent.length;
   await ask(GROUP, "Why is Isnad silent?");
-  assert.equal(telegram.sent.length, 3, "paused communities never reply");
+  assert.equal(telegram.sent.length, sentBeforePauseCheck, "paused communities never reply");
 });
