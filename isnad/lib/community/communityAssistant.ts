@@ -92,25 +92,37 @@ export async function executeGroupAssistantRoute(
       1,
       config.cooldownSeconds
     )).allowed;
-  if (!cooldown) return;
+  if (!cooldown) {
+    logger.info("community_assistant_limited", { communityId: community.id, reason: "cooldown" });
+    return;
+  }
   const minute = await consumeRateLimit(
     rateLimitKey("isn-c1-minute:" + community.id),
     15,
     60
   );
-  if (!minute.allowed) return;
+  if (!minute.allowed) {
+    logger.info("community_assistant_limited", { communityId: community.id, reason: "group_minute_limit" });
+    return;
+  }
   const hourly = await consumeRateLimit(
     rateLimitKey("isn-c1-hour:" + community.id),
     config.maxRepliesPerHour,
     3600
   );
-  if (!hourly.allowed) return;
+  if (!hourly.allowed) {
+    logger.info("community_assistant_limited", { communityId: community.id, reason: "group_hour_limit" });
+    return;
+  }
   const daily = await consumeRateLimit(
     rateLimitKey("isn-c1-day:" + community.id),
     config.dailyAiBudget,
     86400
   );
-  if (!daily.allowed) return;
+  if (!daily.allowed) {
+    logger.info("community_assistant_limited", { communityId: community.id, reason: "group_daily_budget" });
+    return;
+  }
   if (openAiKeyMissing()) {
     logger.warn("community_assistant_unavailable", { communityId: community.id });
     return;
