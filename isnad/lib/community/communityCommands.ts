@@ -48,7 +48,7 @@ const GROUP_HELP_TEXT =
   "Isnad in this community\n\n" +
   "Isnad stays silent unless an administrator connects and activates it.\n\n" +
   "Administrators: /setup connects this community, /community opens the Community Manager, /pause stops all automated activity, /resume restarts it after a fresh permission check.\n\n" +
-  "For personal questions, history and saved sources, message Isnad privately.";
+  "After activation, use /ask followed by a question or mention Isnad directly. For personal questions, history and saved sources, message Isnad privately.";
 
 const MODULE_FOR_COMMAND: Record<string, ModuleKey> = {
   ask: "assistant",
