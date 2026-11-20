@@ -87,11 +87,15 @@ export async function ingestTelegramWebhook(
   }
 
   const communityEnabled = communityRuntimeEnabled();
+  // Fail closed for @mentions when a staging bot uses a different identity.
+  // An explicit /ask remains supported; the bot username must be configured
+  // before free-text @mentions are retained from group conversations.
+  const botUsername = env.TELEGRAM_BOT_USERNAME?.replace(/^@/, "").trim() || undefined;
   let retainPayload = shouldRetainPayload(update, {
     communityEnabled,
     assistantReleased: MODULE_RUNTIME_RELEASED.assistant,
     botId: botIdFromToken(token),
-    botUsername: env.TELEGRAM_BOT_USERNAME ?? "the_isnad_bot",
+    botUsername,
   });
 
   // Privacy boundary: non-command group text is retained only when the active
@@ -106,7 +110,7 @@ export async function ingestTelegramWebhook(
         retainPayload = false;
       } else {
         const config = (await getCommunitySettings(community)).assistant;
-        const explicit = Boolean(mentionedQuestion(message.text, env.TELEGRAM_BOT_USERNAME ?? "the_isnad_bot"));
+        const explicit = Boolean(mentionedQuestion(message.text, botUsername ?? null));
         const repliedToBot = message.reply_to_message?.from?.id === botIdFromToken(token);
         const inQaTopic = message.is_topic_message === true &&
           typeof message.message_thread_id === "number" &&
