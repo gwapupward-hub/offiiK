@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto";
 import { databaseConfigured } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { executeCommunityRoute } from "@/lib/community/communityCommands";
-import { communityFeaturesEnabled } from "@/lib/community/featureFlags";
+import { executeGroupAssistantRoute } from "@/lib/community/communityAssistant";
+import { communityFeaturesEnabled, MODULE_RUNTIME_RELEASED } from "@/lib/community/featureFlags";
 import {
   getTelegramClient,
   resolveBotUsername,
@@ -50,7 +51,7 @@ export async function executeUpdate(update: TelegramUpdate, deps: ExecuteDeps, h
   const route = classifyUpdate(
     update,
     { id: deps.client.botId, username },
-    { communityEnabled: communityRuntimeEnabled() }
+    { communityEnabled: communityRuntimeEnabled(), assistantReleased: MODULE_RUNTIME_RELEASED.assistant }
   );
 
   if (route.kind === "private") {
@@ -59,6 +60,14 @@ export async function executeUpdate(update: TelegramUpdate, deps: ExecuteDeps, h
     const handlePrivate =
       deps.handlePrivate ?? ((token, value) => handleTelegramUpdate(token, value as unknown as PrivateUpdate));
     await handlePrivate(deps.token, update);
+    return route;
+  }
+
+  if (route.kind === "group_assistant") {
+    await executeGroupAssistantRoute(route, { client: deps.client }, {
+      markSideEffect: hooks.markSideEffect,
+      releaseSideEffect: hooks.releaseSideEffect,
+    });
     return route;
   }
 
