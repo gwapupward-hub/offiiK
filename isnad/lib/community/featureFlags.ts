@@ -22,7 +22,7 @@ export function communityGlobalPause(env: Env = process.env): boolean {
  * While false, a module can be configured but never acts in a community.
  */
 export const MODULE_RUNTIME_RELEASED: Readonly<Record<ModuleKey, boolean>> = Object.freeze({
-  assistant: false,
+  assistant: true,
   verification: false,
   publisher: false,
   learning: false,
