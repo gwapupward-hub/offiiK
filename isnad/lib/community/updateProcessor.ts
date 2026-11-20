@@ -26,6 +26,7 @@ import {
   type InboxStatus,
 } from "@/lib/community/telegramInbox";
 import { handleTelegramUpdate, sendMessage, type TelegramUpdate as PrivateUpdate } from "@/lib/telegramBot";
+import type { ChatMessage } from "@/lib/providers";
 
 const PRIVATE_FAILURE_TEXT = "Something went wrong answering that. Please try again in a moment.";
 
@@ -43,6 +44,8 @@ export type ExecuteDeps = {
   token: string;
   client: TelegramClient;
   handlePrivate?: (token: string, update: TelegramUpdate) => Promise<void>;
+  /** Test-only injection seam to exercise ingress -> inbox -> group AI without an external model. */
+  generateGroup?: (prompt: string, messages: ChatMessage[]) => Promise<string>;
 };
 
 /** Classifies and runs one update. Throws on failure so the caller can record it. */
@@ -64,7 +67,7 @@ export async function executeUpdate(update: TelegramUpdate, deps: ExecuteDeps, h
   }
 
   if (route.kind === "group_assistant") {
-    await executeGroupAssistantRoute(route, { client: deps.client }, {
+    await executeGroupAssistantRoute(route, { client: deps.client, generate: deps.generateGroup }, {
       markSideEffect: hooks.markSideEffect,
       releaseSideEffect: hooks.releaseSideEffect,
     });
@@ -114,7 +117,7 @@ export async function processInboxUpdate(
   const correlationId = randomUUID();
 
   try {
-    const route = await executeUpdate(update, { token, client, handlePrivate: deps?.handlePrivate }, {
+    const route = await executeUpdate(update, { token, client, handlePrivate: deps?.handlePrivate, generateGroup: deps?.generateGroup }, {
       correlationId,
       markSideEffect: () => markSideEffectStarted(updateId),
       releaseSideEffect: () => releaseSideEffect(updateId),
