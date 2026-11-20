@@ -269,6 +269,13 @@ export default function TelegramPage() {
         WebApp.BackButton.onClick(rootBackHandler);
         webAppRef.current = WebApp;
         initDataRef.current = WebApp.initData ?? "";
+        // Community setup links (t.me/<bot>/<app>?startapp=cm_…) open the Mini App root.
+        // Redirect once per launch so Back from the Community Manager returns here.
+        const startParam = WebApp.initDataUnsafe?.start_param;
+        if (startParam?.startsWith("cm_") && !communityRedirectHandled(startParam)) {
+          router.replace("/telegram/community");
+          return;
+        }
         if (containerRef.current) {
           chromeCleanup = bindTelegramChromeState(
             containerRef.current,
@@ -292,7 +299,7 @@ export default function TelegramPage() {
       app?.MainButton.hide();
       app?.BackButton.hide();
     };
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (!ready) return;
@@ -909,4 +916,15 @@ function applyThemeParams(element: HTMLElement | null, themeParams: object | und
   for (const [key, value] of Object.entries(themeParams as Record<string, string | undefined>)) {
     if (value) element.style.setProperty(`--tg-theme-${key.replace(/_/g, "-")}`, value);
   }
+}
+
+function communityRedirectHandled(startParam: string): boolean {
+  const key = "isnad.community-start-param";
+  try {
+    if (window.sessionStorage.getItem(key) === startParam) return true;
+    window.sessionStorage.setItem(key, startParam);
+  } catch {
+    // Storage unavailable: still redirect; the Community Manager offers its own navigation.
+  }
+  return false;
 }

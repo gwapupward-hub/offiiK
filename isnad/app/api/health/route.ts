@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkDatabase } from "@/lib/db";
+import { communityFeaturesEnabled, communityGlobalPause } from "@/lib/community/featureFlags";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,6 +34,11 @@ export async function GET() {
         openai: { configured: openaiConfigured },
         telegram: { configured: telegramConfigured },
         database,
+        community: {
+          enabled: communityFeaturesEnabled(),
+          globalPause: communityGlobalPause(),
+          webhookSecretConfigured: Boolean(process.env.TELEGRAM_WEBHOOK_SECRET),
+        },
       },
     },
     { status: operational ? 200 : 503 }

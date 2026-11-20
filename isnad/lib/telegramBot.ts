@@ -186,8 +186,14 @@ export async function answerQuestion(question: string): Promise<string> {
   return answer.trim() || "I couldn't produce an answer. Please try rephrasing the question.";
 }
 
+/**
+ * Private-chat conversation workflow. Group, supergroup and channel updates are
+ * routed by lib/community/telegramDispatcher and must never reach this
+ * function: it reads and writes the sender's *private* conversation history.
+ */
 export async function handleTelegramUpdate(token: string, update: TelegramUpdate): Promise<void> {
   const message = update.message ?? update.edited_message;
+  if (message?.chat?.type !== "private") return;
   const chatId = message?.chat?.id;
   const text = message?.text?.trim();
   if (typeof chatId !== "number" || !text) return;

@@ -1035,3 +1035,367 @@
     font-size: 25px;
   }
 }
+
+
+/* Community Manager (Admin Control Center). Uses the Telegram theme tokens above. */
+.cm-intro {
+  margin-bottom: 14px;
+}
+
+.cm-intro h1,
+.cm-heading {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.cm-intro > p:last-child {
+  margin: 6px 0 0;
+  color: var(--tg-text-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.cm-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.cm-stack + .cm-stack,
+.telegram-compact-card + .telegram-compact-card {
+  margin-top: 12px;
+}
+
+.cm-stack > .telegram-compact-card + .telegram-compact-card {
+  margin-top: 0;
+}
+
+.cm-stack h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+}
+
+.cm-title-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cm-title-row > :first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cm-title-row .cm-chip {
+  margin-top: 4px;
+}
+
+.cm-chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 24px;
+  border-radius: 999px;
+  padding: 0 9px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--tg-text-muted);
+  background: color-mix(in srgb, var(--tg-text-muted) 14%, transparent);
+}
+
+.cm-chip[data-tone="good"] {
+  color: var(--tg-link);
+  background: color-mix(in srgb, var(--tg-link) 14%, transparent);
+}
+
+.cm-chip[data-tone="warn"] {
+  color: var(--tg-accent);
+  background: color-mix(in srgb, var(--tg-accent) 15%, transparent);
+}
+
+.cm-chip[data-tone="bad"] {
+  color: var(--tg-destructive);
+  background: color-mix(in srgb, var(--tg-destructive) 13%, transparent);
+}
+
+.cm-section-label {
+  margin: 16px 2px 6px;
+  color: var(--tg-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.cm-stack .cm-section-label {
+  margin: 6px 0 0;
+}
+
+.cm-checks,
+.cm-bullets,
+.cm-list,
+.cm-steps {
+  margin: 0;
+  padding: 0;
+}
+
+.cm-checks,
+.cm-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+}
+
+.cm-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.cm-check-mark {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--tg-link);
+  background: color-mix(in srgb, var(--tg-link) 14%, transparent);
+}
+
+.cm-check[data-ok="false"] .cm-check-mark {
+  color: var(--tg-destructive);
+  background: color-mix(in srgb, var(--tg-destructive) 13%, transparent);
+}
+
+.cm-check-hint {
+  display: block;
+  margin-top: 2px;
+  color: var(--tg-text-muted);
+  font-size: 12px;
+}
+
+.cm-bullets,
+.cm-steps {
+  display: grid;
+  gap: 6px;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.cm-body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.cm-muted {
+  margin: 0;
+  color: var(--tg-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.cm-warning {
+  margin: 0;
+  color: var(--tg-destructive);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.cm-notice {
+  margin: 0 0 12px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--tg-link);
+  background: color-mix(in srgb, var(--tg-link) 11%, transparent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cm-actions {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 10px;
+}
+
+.cm-wide {
+  width: 100%;
+}
+
+.cm-danger {
+  background: var(--tg-destructive);
+}
+
+.cm-danger-text {
+  color: var(--tg-destructive) !important;
+}
+
+.cm-link-button {
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--tg-link);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.cm-link-button:disabled,
+.telegram-primary-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.cm-back {
+  margin: -4px 0 6px -4px;
+  padding: 0 4px;
+}
+
+.cm-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  margin: 14px 0;
+  border: 1px solid var(--tg-hairline);
+  border-radius: 12px;
+  background: var(--tg-surface-grouped);
+  padding: 3px;
+}
+
+.cm-tabs button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--tg-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cm-tabs button[data-active="true"] {
+  background: var(--tg-surface);
+  color: var(--tg-text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.cm-fields {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--tg-hairline);
+  padding-top: 10px;
+}
+
+.cm-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.cm-field > span {
+  min-width: 0;
+}
+
+.cm-fields .telegram-text-field {
+  max-width: 55%;
+}
+
+.cm-toggle-row {
+  position: relative;
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.cm-switch-label {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.cm-save-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin: 2px -14px 0;
+  padding: 10px 14px calc(10px + var(--tg-safe-bottom));
+  background: color-mix(in srgb, var(--tg-surface) 94%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.cm-community-card {
+  display: grid;
+  width: 100%;
+  gap: 4px;
+  color: var(--tg-text);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.cm-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid var(--tg-hairline);
+  padding-top: 8px;
+  font-size: 13px;
+}
+
+.cm-list-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.cm-audit-row {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Lists rendered directly as cards keep the card padding. */
+.telegram-compact-card.cm-checks {
+  padding: 14px;
+}
+
+.cm-bullets {
+  list-style: disc;
+}
+
+.cm-steps {
+  list-style: decimal;
+}
+
+.cm-bullets li::marker,
+.cm-steps li::marker {
+  color: var(--tg-text-muted);
+}
+
+.cm-fields .telegram-select {
+  max-width: 62%;
+  text-transform: none;
+}

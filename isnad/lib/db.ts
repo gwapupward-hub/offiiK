@@ -31,6 +31,14 @@ const REQUIRED_TABLES = [
   "daily_hadith_items",
   "daily_vocabulary_items",
   "daily_checkins",
+  "communities",
+  "community_memberships",
+  "community_settings",
+  "community_interactions",
+  "telegram_inbox",
+  "community_audit_events",
+  "community_setup_nonces",
+  "community_idempotency_keys",
 ] as const;
 
 export function databaseConfigured(): boolean {
@@ -109,7 +117,15 @@ export async function checkDatabase(): Promise<DatabaseHealth> {
         to_regclass('public.daily_quran_items') IS NOT NULL AS daily_quran_items,
         to_regclass('public.daily_hadith_items') IS NOT NULL AS daily_hadith_items,
         to_regclass('public.daily_vocabulary_items') IS NOT NULL AS daily_vocabulary_items,
-        to_regclass('public.daily_checkins') IS NOT NULL AS daily_checkins
+        to_regclass('public.daily_checkins') IS NOT NULL AS daily_checkins,
+        to_regclass('public.communities') IS NOT NULL AS communities,
+        to_regclass('public.community_memberships') IS NOT NULL AS community_memberships,
+        to_regclass('public.community_settings') IS NOT NULL AS community_settings,
+        to_regclass('public.community_interactions') IS NOT NULL AS community_interactions,
+        to_regclass('public.telegram_inbox') IS NOT NULL AS telegram_inbox,
+        to_regclass('public.community_audit_events') IS NOT NULL AS community_audit_events,
+        to_regclass('public.community_setup_nonces') IS NOT NULL AS community_setup_nonces,
+        to_regclass('public.community_idempotency_keys') IS NOT NULL AS community_idempotency_keys
     `;
 
     const missingTables = REQUIRED_TABLES.filter((table) => !tables?.[table]);
@@ -128,6 +144,7 @@ export async function checkDatabase(): Promise<DatabaseHealth> {
       "003_bookmarks_notes.sql",
       "004_guided_learning.sql",
       "005_daily_knowledge.sql",
+      "006_community_foundation.sql",
     ];
 
     return {

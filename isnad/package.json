@@ -10,7 +10,9 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "db:migrate": "node scripts/migrate.mjs",
-    "telegram:setup": "node scripts/telegram-setup.mjs"
+    "telegram:setup": "node scripts/telegram-setup.mjs",
+    "test": "tsx --test \"tests/unit/**/*.test.ts\"",
+    "test:db": "tsx --test --test-concurrency=1 \"tests/db/**/*.test.ts\""
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.20",
@@ -31,6 +33,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.11",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   },
   "engines": {
