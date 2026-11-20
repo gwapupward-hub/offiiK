@@ -182,4 +182,23 @@ test("C1 scoped group Q&A persists only local interactions and obeys pause", {
   const sentBeforePauseCheck = telegram.sent.length;
   await ask(GROUP, "Why is Isnad silent?");
   assert.equal(telegram.sent.length, sentBeforePauseCheck, "paused communities never reply");
+  const pausedId = await deliver("message", "@isnad_test_bot should be ignored while paused");
+  const [pausedInbox] = await sql.unsafe<Array<{ status: string; has_payload: boolean }>>(
+    "SELECT status, payload IS NOT NULL AS has_payload FROM telegram_inbox WHERE update_id = $1", [pausedId]
+  );
+  assert.equal(pausedInbox.status, "succeeded");
+  assert.equal(pausedInbox.has_payload, false, "paused group text must not be retained");
+
+  await sql.unsafe("UPDATE communities SET status = 'active' WHERE id = $1", [communityIds[0]]);
+  process.env.ISNAD_COMMUNITY_GLOBAL_PAUSE = "true";
+  try {
+    const globalPausedId = await deliver("message", "@isnad_test_bot should be ignored during emergency stop");
+    const [globalPausedInbox] = await sql.unsafe<Array<{ status: string; has_payload: boolean }>>(
+      "SELECT status, payload IS NOT NULL AS has_payload FROM telegram_inbox WHERE update_id = $1", [globalPausedId]
+    );
+    assert.equal(globalPausedInbox.status, "succeeded");
+    assert.equal(globalPausedInbox.has_payload, false, "global pause must prevent raw group-text retention");
+  } finally {
+    delete process.env.ISNAD_COMMUNITY_GLOBAL_PAUSE;
+  }
 });
