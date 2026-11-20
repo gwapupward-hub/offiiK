@@ -128,13 +128,15 @@ export async function executeGroupAssistantRoute(
     memoryEnabled: false,
   };
   const prompt = buildConfiguredPrompt(question, preferences);
+  // Reserve the outbound effect before model generation: a long completion must
+  // not outlive the inbox lease and be generated a second time by another worker.
+  await hooks.markSideEffect();
   const answer = (await (deps.generate ?? generateAnswer)(prompt, messages)).trim();
   if (!answer) return;
   // The core source and uncertainty requirements remain active for every reply.
   const responseText = answer.slice(0, MAX_ANSWER_LENGTH);
 
   // One update must never start another send after a timeout or lost response.
-  await hooks.markSideEffect();
   try {
     await deps.client.sendMessage({
       ...replyContext(message),
