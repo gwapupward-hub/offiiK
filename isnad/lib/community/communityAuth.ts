@@ -17,6 +17,7 @@ export const ROLE_CAPABILITIES: Readonly<Record<CommunityRole, readonly Capabili
     "audit.view",
     "analytics.view",
     "content.edit",
+    "content.review",
     "content.publish",
   ],
   community_manager: [
