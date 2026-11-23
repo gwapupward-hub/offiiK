@@ -28,7 +28,7 @@ export type TelegramMessage = {
   sender_chat?: TelegramChatRef;
   message_thread_id?: number;
   is_topic_message?: boolean;
-  reply_to_message?: { message_id: number; from?: TelegramUserRef };
+  reply_to_message?: { message_id: number; from?: TelegramUserRef; text?: string; caption?: string };
   entities?: TelegramEntity[];
   via_bot?: TelegramUserRef;
   migrate_to_chat_id?: number;
@@ -160,6 +160,7 @@ export type Route =
   | { kind: "group_private_only_notice"; command: string; message: TelegramMessage }
   | { kind: "group_module_unavailable"; command: string; message: TelegramMessage }
   | { kind: "group_assistant"; trigger: "command" | "mention" | "reply" | "topic"; question: string; message: TelegramMessage }
+  | { kind: "group_verification"; question: string; message: TelegramMessage }
   | { kind: "group_chat_migrated"; fromChatId: number; toChatId: number }
   | { kind: "bot_membership"; change: ChatMemberUpdated }
   | { kind: "member_rights"; change: ChatMemberUpdated }
@@ -187,7 +188,7 @@ function isGroup(chat: TelegramChatRef | undefined): boolean {
 export function classifyUpdate(
   update: TelegramUpdate,
   bot: BotRef,
-  options: { communityEnabled: boolean; assistantReleased?: boolean }
+  options: { communityEnabled: boolean; assistantReleased?: boolean; verificationReleased?: boolean }
 ): Route {
   if (update.my_chat_member) {
     const change = update.my_chat_member;
@@ -266,6 +267,9 @@ export function classifyUpdate(
       args: command.args,
       message,
     };
+  }
+  if (options.verificationReleased && command.command === "verify") {
+    return { kind: "group_verification", question: command.args || message.reply_to_message?.text || "", message };
   }
   if (options.assistantReleased && command.command === "ask") {
     return { kind: "group_assistant", trigger: "command", question: command.args, message };
