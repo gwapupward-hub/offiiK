@@ -43,7 +43,7 @@ test("migrations", { skip: !url && "TEST_DATABASE_URL is not set" }, async (t) =
     const { readFile } = await import("node:fs/promises");
     const contents = await readFile("db/migrations/007_content_verification.sql", "utf8");
     const statements = contents.replace(/--.*$/gm, "").split(";").map((part) => part.trim());
-    const destructive = statements.filter((part) => /^(DROP|ALTER|TRUNCATE|DELETE|UPDATE)\\b/i.test(part));
+    const destructive = statements.filter((part) => /^(DROP|ALTER|TRUNCATE|DELETE|UPDATE)\b/i.test(part));
     assert.deepEqual(destructive, []);
     await sql.unsafe(contents);
   });
