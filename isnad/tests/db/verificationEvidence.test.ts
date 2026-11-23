@@ -22,15 +22,18 @@ test("C2 evidence persistence, provenance and inconclusive fallbacks", {
   const [reviewer] = await sql`
     INSERT INTO users (id) VALUES (gen_random_uuid()) RETURNING id
   `;
+  const [editor] = await sql`
+    INSERT INTO users (id) VALUES (gen_random_uuid()) RETURNING id
+  `;
 
   const synthetic = "A synthetic lesson explains how evidence records are checked";
   const textIndex = normalizeEvidenceText(synthetic);
   const [source] = await sql`
     INSERT INTO source_records (
-      source_type, work, locator, edition, canonical_text, normalized_text,
+      community_id, submitted_by, source_type, work, locator, edition, canonical_text, normalized_text,
       language, source_version, review_status
     ) VALUES (
-      'scholarship', 'Synthetic fixture, not real religious evidence', 'test:1',
+      ${community.id}, ${editor.id}, 'scholarship', 'Synthetic fixture, not real religious evidence', 'test:1',
       'CI only', ${synthetic}, ${textIndex}, 'en', 'test-v1', 'pending'
     ) RETURNING id
   `;
