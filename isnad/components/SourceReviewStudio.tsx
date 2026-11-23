@@ -111,7 +111,7 @@ export default function SourceReviewStudio({
     {canEdit?<form className="telegram-compact-card cm-stack" onSubmit={event=>void submit(event)}>
       <h2>Submit source for review</h2>
       <div className="cm-fields">
-        <label className="cm-field"><span>Type</span><select className="telegram-select" value={draft.sourceType} onChange={e=>field("sourceType",e.target.value as SourceDraft["sourceType"])}><option value="hadith">Hadith</option><option value="quran">Qur'an</option><option value="scholarship">Scholarly text</option></select></label>
+        <label className="cm-field"><span>Type</span><select className="telegram-select" value={draft.sourceType} onChange={e=>field("sourceType",e.target.value as SourceDraft["sourceType"])}><option value="hadith">Hadith</option><option value="quran">Qur&apos;an</option><option value="scholarship">Scholarly text</option></select></label>
         <label className="cm-field"><span>Source work</span><input className="telegram-text-field" maxLength={180} required value={draft.work} onChange={e=>field("work",e.target.value)}/></label>
         <label className="cm-field"><span>Locator (book, chapter, verse, number)</span><input className="telegram-text-field" maxLength={180} required value={draft.locator} onChange={e=>field("locator",e.target.value)}/></label>
         <label className="cm-field"><span>Edition</span><input className="telegram-text-field" maxLength={180} required value={draft.edition} onChange={e=>field("edition",e.target.value)}/></label>
