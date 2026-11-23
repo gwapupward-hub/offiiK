@@ -39,6 +39,10 @@ Migration `007_content_verification.sql` adds:
 - `verification_findings`: text match, attribution, and grading statuses
   independently; defaults for attribution and grading are `not_assessed`.
 
+Community maintenance deletes expired verification requests (30-day default)
+and cascades deletion to their findings, so raw submissions do not persist
+indefinitely.
+
 A source cannot become approved without recorded reviewer identity and time;
 revoked and pending records cannot satisfy lookup. The DB health check requires
 migration 007. Existing migrations are not modified.
