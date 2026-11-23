@@ -31,7 +31,7 @@ test("C2B independent source review and community-scoped verification", {
     sourceType: "scholarship", work: "Original CI fixture", locator: "test:01",
     edition: "synthetic", canonicalText: text, language: "en", sourceVersion: "v1",
     sourceUrl: "https://example.org/test1", licenseNotice: "Original synthetic test material",
-    provenance: { provider: "CI", citation: "test01", rightsBasis: "Synthetic authored fixture" },
+    provenance: { provider: "CI fixtures", citation: "test01", rightsBasis: "Synthetic authored fixture" },
   });
   assert.equal(parsed.ok, true);
   if (!parsed.ok) throw Error(parsed.issues.join(", "));
