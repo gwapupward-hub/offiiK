@@ -3,6 +3,7 @@ import { databaseConfigured } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { executeCommunityRoute } from "@/lib/community/communityCommands";
 import { executeGroupAssistantRoute } from "@/lib/community/communityAssistant";
+import { executeGroupVerificationRoute } from "@/lib/community/groupVerification";
 import { communityFeaturesEnabled, MODULE_RUNTIME_RELEASED } from "@/lib/community/featureFlags";
 import {
   getTelegramClient,
@@ -54,7 +55,7 @@ export async function executeUpdate(update: TelegramUpdate, deps: ExecuteDeps, h
   const route = classifyUpdate(
     update,
     { id: deps.client.botId, username },
-    { communityEnabled: communityRuntimeEnabled(), assistantReleased: MODULE_RUNTIME_RELEASED.assistant }
+    { communityEnabled: communityRuntimeEnabled(), assistantReleased: MODULE_RUNTIME_RELEASED.assistant, verificationReleased: MODULE_RUNTIME_RELEASED.verification }
   );
 
   if (route.kind === "private") {
@@ -70,6 +71,13 @@ export async function executeUpdate(update: TelegramUpdate, deps: ExecuteDeps, h
     await executeGroupAssistantRoute(route, { client: deps.client, generate: deps.generateGroup }, {
       markSideEffect: hooks.markSideEffect,
       releaseSideEffect: hooks.releaseSideEffect,
+    });
+    return route;
+  }
+
+  if (route.kind === "group_verification") {
+    await executeGroupVerificationRoute(route, { client: deps.client }, {
+      markSideEffect: hooks.markSideEffect,
     });
     return route;
   }
