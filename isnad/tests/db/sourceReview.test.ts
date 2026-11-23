@@ -34,7 +34,7 @@ test("C2B independent source review and community-scoped verification", {
     provenance: { provider: "CI fixtures", citation: "test01", rightsBasis: "Synthetic authored fixture" },
   });
   assert.equal(parsed.ok, true);
-  if (!parsed.ok) throw Error(parsed.issues.join(", "));
+  if (!parsed.ok) throw Error("Invalid test source fixture");
   const id = await submitSourceDraft({
     communityId, actorUserId: editor, actorTelegramUserId: 10001,
     correlationId: "test-submit", draft: parsed.value,
