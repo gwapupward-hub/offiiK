@@ -152,6 +152,7 @@ export async function checkDatabase(): Promise<DatabaseHealth> {
       "005_daily_knowledge.sql",
       "006_community_foundation.sql",
       "007_content_verification.sql",
+      "008_source_review_scope.sql",
     ];
 
     return {
