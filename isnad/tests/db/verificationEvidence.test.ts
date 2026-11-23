@@ -91,7 +91,7 @@ test("C2 evidence persistence, provenance and inconclusive fallbacks", {
     `;
     assert.equal(rows.length, 4);
     assert.ok(rows.every((row) => String(row.community_id) === String(community.id)));
-    assert.ok(rows.every((row) => row.thread_id === 50));
+    assert.ok(rows.every((row) => Number(row.thread_id) === 50));
     assert.ok(rows.every((row) => row.unexpired === true));
     await assert.rejects(verifyAndStoreText(input("short", 5)));
     const [one] = await sql`
