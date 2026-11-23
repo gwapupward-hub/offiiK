@@ -94,5 +94,14 @@ test("C2 evidence persistence, provenance and inconclusive fallbacks", {
     assert.ok(rows.every((row) => row.thread_id === 50));
     assert.ok(rows.every((row) => row.unexpired === true));
     await assert.rejects(verifyAndStoreText(input("short", 5)));
+    const [one] = await sql`
+      SELECT id FROM verification_requests ORDER BY submitted_at ASC LIMIT 1
+    `;
+    await sql`UPDATE verification_requests SET expires_at = now() - interval '1 minute' WHERE id = ${one.id}`;
+    const { runCommunityMaintenance } = await import("@/lib/community/maintenance");
+    const purged = await runCommunityMaintenance();
+    assert.equal(purged.verificationRequestsDeleted, 1);
+    const [left] = await sql`SELECT count(*)::int AS count FROM verification_requests`;
+    assert.equal(left.count, 3);
   });
 });
