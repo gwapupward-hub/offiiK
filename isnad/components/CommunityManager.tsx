@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ModuleEvaluation } from "@/lib/community/botPermissions";
+import SourceReviewStudio from "@/components/SourceReviewStudio";
 import type { CommunityView } from "@/lib/community/communityView";
 import type { CommunitySettings } from "@/lib/community/settingsSchema";
 import type { BotPermissionSnapshot, CommunityRole, ModuleKey } from "@/lib/community/types";
@@ -49,7 +50,7 @@ type AuditEvent = {
 type ApiFailure = { ok: false; status: number; code: string; message: string; extra: Record<string, unknown> };
 type ApiResult<T> = { ok: true; data: T } | ApiFailure;
 
-type Tab = "overview" | "modules" | "security";
+type Tab = "overview" | "modules" | "sources" | "security";
 type Tone = "good" | "warn" | "bad" | "muted";
 
 const MODULE_DESCRIPTIONS: Record<ModuleKey, string> = {
@@ -542,7 +543,7 @@ export default function CommunityManager({
         {banner}
 
         <div className="cm-tabs" role="tablist" aria-label="Community sections">
-          {(["overview", "modules", "security"] as Tab[]).map((item) => (
+          {(["overview", "modules", ...(can("content.edit") || can("content.review") ? ["sources"] : []), "security"] as Tab[]).map((item) => (
             <button
               key={item}
               type="button"
@@ -554,7 +555,7 @@ export default function CommunityManager({
                 setTab(item);
               }}
             >
-              {item === "overview" ? "Overview" : item === "modules" ? "Modules" : "Security"}
+              {item === "overview" ? "Overview" : item === "modules" ? "Modules" : item === "sources" ? "Sources" : "Security"}
             </button>
           ))}
         </div>
@@ -803,6 +804,10 @@ export default function CommunityManager({
               </div>
             ) : null}
           </div>
+        ) : null}
+
+        {tab === "sources" ? (
+          <SourceReviewStudio communityId={view.id} authorizedFetch={authorizedFetch} canEdit={can("content.edit")} canReview={can("content.review")} />
         ) : null}
 
         {tab === "security" ? (
