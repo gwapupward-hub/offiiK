@@ -59,7 +59,9 @@ test("C2 evidence persistence, provenance and inconclusive fallbacks", {
     `);
     await sql`
       UPDATE source_records
-      SET review_status = 'approved', reviewed_by = ${reviewer.id}, reviewed_at = now()
+      SET review_status = 'approved', reviewed_by = ${reviewer.id}, reviewed_at = now(),
+          license_notice = 'Synthetic fixture for CI only',
+          provenance = ${sql.json({ provider: 'ci-test', source: 'synthetic' })}
       WHERE id = ${source.id}
     `;
     const { requestId, result } = await verifyAndStoreText(input(synthetic + ".", 2));
