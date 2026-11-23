@@ -7,12 +7,12 @@ CREATE TABLE IF NOT EXISTS source_records (
   source_type TEXT NOT NULL CHECK (source_type IN ('quran', 'hadith', 'scholarship')),
   work TEXT NOT NULL CHECK (length(trim(work)) > 0),
   locator TEXT NOT NULL CHECK (length(trim(locator)) > 0),
-  edition TEXT NOT NULL,
+  edition TEXT NOT NULL CHECK (length(trim(edition)) > 0),
   canonical_text TEXT NOT NULL CHECK (length(trim(canonical_text)) >= 10),
   normalized_text TEXT NOT NULL CHECK (length(trim(normalized_text)) >= 10),
   language TEXT NOT NULL CHECK (language IN ('ar', 'en')),
-  source_version TEXT NOT NULL,
-  source_url TEXT,
+  source_version TEXT NOT NULL CHECK (length(trim(source_version)) > 0),
+  source_url TEXT CHECK (source_url IS NULL OR source_url ~ '^https://'),
   provenance JSONB NOT NULL DEFAULT '{}'::jsonb,
   license_notice TEXT,
   review_status TEXT NOT NULL DEFAULT 'pending'
@@ -20,7 +20,11 @@ CREATE TABLE IF NOT EXISTS source_records (
   reviewed_by UUID REFERENCES users(id) ON DELETE SET NULL,
   reviewed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CHECK (review_status <> 'approved' OR (reviewed_at IS NOT NULL AND reviewed_by IS NOT NULL)),
+  CHECK (review_status <> 'approved' OR (
+    reviewed_at IS NOT NULL AND reviewed_by IS NOT NULL
+    AND length(trim(COALESCE(license_notice, ''))) > 0
+    AND provenance <> '{}'::jsonb
+  )),
   UNIQUE (source_type, work, locator, edition, language, source_version)
 );
 
