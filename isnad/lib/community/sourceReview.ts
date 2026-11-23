@@ -10,8 +10,12 @@ export type DraftSource = {
   provenance: { provider: string; citation: string; rightsBasis: string };
 };
 export type ReviewDecision = "approve" | "revoke";
-export type ReviewResult = { kind: "approved" | "revoked"; id: string } |
-  { kind: "not_found" | "conflict" | "self_review" };
+export type ReviewResult =
+  | { kind: "approved"; id: string }
+  | { kind: "revoked"; id: string }
+  | { kind: "not_found" }
+  | { kind: "conflict" }
+  | { kind: "self_review" };
 
 const FIELDS = new Set(["sourceType","work","locator","edition","canonicalText","language","sourceVersion","sourceUrl","licenseNotice","provenance"]);
 const SOURCE_TYPES = new Set(["quran","hadith","scholarship"]);
