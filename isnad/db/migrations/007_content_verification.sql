@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS source_records (
   locator TEXT NOT NULL CHECK (length(trim(locator)) > 0),
   edition TEXT NOT NULL,
   canonical_text TEXT NOT NULL CHECK (length(trim(canonical_text)) >= 10),
+  normalized_text TEXT NOT NULL CHECK (length(trim(normalized_text)) >= 10),
   language TEXT NOT NULL CHECK (language IN ('ar', 'en')),
   source_version TEXT NOT NULL,
   source_url TEXT,
@@ -25,6 +26,9 @@ CREATE TABLE IF NOT EXISTS source_records (
 
 CREATE INDEX IF NOT EXISTS source_records_approved_lookup_idx
   ON source_records (source_type, work, locator) WHERE review_status = 'approved';
+
+CREATE INDEX IF NOT EXISTS source_records_exact_text_idx
+  ON source_records (normalized_text) WHERE review_status = 'approved';
 
 CREATE TABLE IF NOT EXISTS verification_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
