@@ -1,0 +1,69 @@
+name: Isnad C2B source-review validation
+
+on:
+  pull_request:
+    branches:
+      - feature/isn-c2-evidence-foundation-20261123
+      - main
+    paths:
+      - "isnad/**"
+      - ".github/workflows/isnad-c2b-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: isnad_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d isnad_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    defaults:
+      run:
+        working-directory: isnad
+    env:
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/isnad_test
+      TELEGRAM_BOT_TOKEN: "123456:TEST-TOKEN"
+      TELEGRAM_WEBHOOK_SECRET: "ci-webhook-secret"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: isnad/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:db
+      - run: npm run build
+      - name: Lint C2B source-review code and tests
+        run: >-
+          npx eslint
+          lib/community/sourceReview.ts
+          lib/community/groupVerification.ts
+          lib/community/telegramDispatcher.ts
+          lib/community/updateProcessor.ts
+          lib/community/communityAuth.ts
+          lib/community/verificationEvidence.ts
+          components/SourceReviewStudio.tsx
+          components/CommunityManager.tsx
+          app/api/v1/communities/\[communityId\]/sources/route.ts
+          app/api/v1/communities/\[communityId\]/sources/\[sourceId\]/review/route.ts
+          tests/unit/sourceReview.test.ts
+          tests/db/sourceReview.test.ts
