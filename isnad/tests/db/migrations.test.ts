@@ -21,13 +21,14 @@ test("migrations", { skip: !url && "TEST_DATABASE_URL is not set" }, async (t) =
       "005_daily_knowledge.sql",
       "006_community_foundation.sql",
       "007_content_verification.sql",
+      "008_source_review_scope.sql",
     ]);
   });
 
   await t.test("re-running is a no-op", () => {
     const output = runMigrations(url!);
     assert.equal(/Applied/.test(output), false);
-    assert.equal((output.match(/Skipping/g) ?? []).length, 7);
+    assert.equal((output.match(/Skipping/g) ?? []).length, 8);
   });
 
   await t.test("006 is additive and its SQL is idempotent on its own", async () => {

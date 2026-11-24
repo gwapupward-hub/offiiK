@@ -103,8 +103,8 @@ export async function verifyAndStoreText(input: VerificationInput): Promise<{
     }>>(
       "SELECT id::text AS id, source_type, work, locator, edition, source_version, " +
       "source_url, canonical_text, normalized_text, review_status " +
-      "FROM source_records WHERE review_status = 'approved' AND normalized_text = $1 LIMIT 11",
-      [normalized]
+      "FROM source_records WHERE review_status = 'approved' AND community_id = $2 AND normalized_text = $1 LIMIT 11",
+      [normalized, input.communityId]
     );
     const records: ApprovedSource[] = sources.map((row) => ({
       id: row.id,
