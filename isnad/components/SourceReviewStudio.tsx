@@ -7,6 +7,7 @@ type Source = {
   edition: string; canonicalText: string; reviewStatus: "pending"|"approved"|"revoked";
   sourceVersion: string; sourceUrl: string|null;
 };
+type Correction = { id:string;requestId:string;sourceId:string;status:"needs_review"|"acknowledged";reason:string;work:string;locator:string;createdAt:string };
 type SourceDraft = {
   sourceType: "quran"|"hadith"|"scholarship"; work: string; locator: string;
   edition: string; canonicalText: string; language: "ar"|"en";
@@ -32,6 +33,8 @@ export default function SourceReviewStudio({
   canEdit:boolean; canReview:boolean;
 }) {
   const [sources,setSources] = useState<Source[]>([]);
+  const [corrections,setCorrections] = useState<Correction[]>([]);
+  const [revokeReason,setRevokeReason] = useState("");
   const [draft,setDraft] = useState<SourceDraft>(initial);
   const [loading,setLoading] = useState(true);
   const [busy,setBusy] = useState(false);
@@ -46,9 +49,15 @@ export default function SourceReviewStudio({
       const json=await response.json();
       if(!response.ok) throw Error(json?.error?.message ?? "Unable to load sources.");
       setSources(json.sources ?? []);
+      if(canReview){
+        const correctionResponse=await authorizedFetch(endpoint+"/corrections");
+        const correctionJson=await correctionResponse.json().catch(()=>({}));
+        if(!correctionResponse.ok) throw Error(correctionJson?.error?.message??"Correction queue unavailable.");
+        setCorrections(correctionJson.corrections??[]);
+      }
     } catch(e) { setError(e instanceof Error?e.message:"Source list unavailable."); }
     finally {setLoading(false);}
-  },[authorizedFetch,endpoint]);
+  },[authorizedFetch,endpoint,canReview]);
 
   useEffect(()=>{void Promise.resolve().then(load);},[load]);
 
@@ -92,10 +101,26 @@ export default function SourceReviewStudio({
     if(!canReview||busy)return;
     setBusy(true);setError("");setMessage("");
     try{
-      await send(endpoint+"/"+id+"/review",{decision});
-      setMessage(decision==="approve"?"Source text approved for exact matching. No hadith grade was assigned.":"Source revoked from future matching.");
+      const outcome=await send(endpoint+"/"+id+"/review",{
+        decision,...(decision==="revoke"?{reason:revokeReason.trim()}:{})
+      });
+      if(decision==="revoke")setRevokeReason("");
+      setMessage(decision==="approve"
+        ?"Source text approved for exact matching. No hadith grade was assigned."
+        :"Source revoked. "+String(outcome.affectedFindings??0)+" retained findings queued for correction review. No users were notified.");
       await load();
     }catch(e){setError(e instanceof Error?e.message:"Review failed.");}
+    finally{setBusy(false);}
+  }
+
+  async function acknowledge(id:string){
+    if(!canReview||busy)return;
+    setBusy(true);setError("");setMessage("");
+    try{
+      await send(endpoint+"/corrections/"+id+"/acknowledge",{});
+      setMessage("Correction item acknowledged internally. This does not mean the user was notified.");
+      await load();
+    }catch(e){setError(e instanceof Error?e.message:"Acknowledgment failed.");}
     finally{setBusy(false);}
   }
 
@@ -128,6 +153,14 @@ export default function SourceReviewStudio({
     </form>:null}
     <div className="telegram-compact-card cm-stack">
       <h2>Community source queue</h2>
+      {canReview && sources.some(source=>source.reviewStatus==="approved") ? (
+        <label className="cm-field">
+          <span>Reason for source withdrawal (10–500 characters)</span>
+          <textarea className="telegram-text-field" rows={2} maxLength={500}
+            placeholder="Explain why this source should no longer be used for future text matching."
+            value={revokeReason} onChange={event=>setRevokeReason(event.target.value)} />
+        </label>
+      ) : null}
       {loading?<p className="cm-muted">Loading…</p>:sources.length===0?<p className="cm-muted">No source records submitted.</p>:
       <ul className="cm-list">{sources.map(source=><li className="cm-list-row" key={source.id}>
         <div className="cm-stack min-w-0">
@@ -136,10 +169,24 @@ export default function SourceReviewStudio({
           <p className="cm-body">{source.canonicalText.slice(0,240)}{source.canonicalText.length>240?"…":""}</p>
           <div className="cm-actions">
             {canReview&&source.reviewStatus==="pending"?<button className="telegram-primary-button" type="button" disabled={busy} onClick={()=>void review(source.id,"approve")}>Approve text record</button>:null}
-            {canReview&&source.reviewStatus==="approved"?<button className="cm-link-button cm-danger-text" type="button" disabled={busy} onClick={()=>void review(source.id,"revoke")}>Revoke</button>:null}
+            {canReview&&source.reviewStatus==="approved"?<button className="cm-link-button cm-danger-text" type="button" disabled={busy||revokeReason.trim().length<10} onClick={()=>void review(source.id,"revoke")}>Revoke</button>:null}
           </div>
         </div>
       </li>)}</ul>}
     </div>
+    {canReview ? <div className="telegram-compact-card cm-stack">
+      <h2>Internal correction queue</h2>
+      <p className="cm-muted">When an approved source is revoked, affected retained findings are marked for review. Acknowledging a finding never sends a Telegram notice or authenticates a religious claim.</p>
+      {corrections.length===0?<p className="cm-muted">No correction items.</p>:
+        <ul className="cm-list">{corrections.map(item=><li key={item.id} className="cm-list-row">
+          <div className="cm-stack min-w-0">
+            <strong>{item.work} · {item.locator}</strong>
+            <span className="cm-muted">{item.status} · {new Date(item.createdAt).toLocaleString()}</span>
+            <p className="cm-body">Revocation reason: {item.reason}</p>
+            {item.status==="needs_review"?<button type="button" className="telegram-primary-button"
+              disabled={busy} onClick={()=>void acknowledge(item.id)}>Mark internally reviewed</button>:null}
+          </div>
+        </li>)}</ul>}
+    </div>:null}
   </div>;
 }
