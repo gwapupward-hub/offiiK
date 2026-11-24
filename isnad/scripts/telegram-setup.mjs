@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /** Idempotent production setup for @the_isnad_bot. */
 import { SITE_URL } from "../site.config.mjs";
+import { validateStagingConfig } from "./staging-preflight.mjs";
 
 const args = process.argv.slice(2);
 const vercelBuild = args.includes("--vercel-build");
@@ -11,8 +12,8 @@ const resetCommunityScopes = args.includes("--reset-community-commands");
 const communityEnabled = process.env.ISNAD_COMMUNITY_ENABLED === "true";
 const positionalBaseUrl = args.find((arg) => !arg.startsWith("--"));
 
-if (vercelBuild && process.env.VERCEL_ENV !== "production") {
-  console.log(`Skipping Telegram setup for Vercel environment: ${process.env.VERCEL_ENV || "unknown"}.`);
+if (vercelBuild) {
+  console.log("Skipping Telegram setup during build. Run the approved bot setup separately.");
   process.exit(0);
 }
 
@@ -79,19 +80,50 @@ async function callApi(method, body = {}) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    redirect: "error",
+    signal: AbortSignal.timeout(10000),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !data.ok) {
-    fail(`${method} failed: ${data.description || response.statusText}`);
+    fail(`${method} failed. Check Telegram permissions and API access.`);
   }
   return data.result;
 }
 
 async function main() {
+  // Explicit staging setup only: validate independent identity and target before
+  // invoking *any* Telegram mutating method.
+  const target = process.env.ISNAD_RELEASE_TARGET;
+  if (target !== "staging" && target !== "production") {
+    fail("Set the explicitly approved release target before changing Telegram configuration.");
+  }
+  const staging = target === "staging";
+  let stage;
+  if (staging) {
+    stage = validateStagingConfig(process.env);
+    if (dropPendingUpdates || resetCommunityScopes || baseUrl !== stage.origin) {
+      fail("Staging setup requires the exact staging origin and forbids destructive reset options.");
+    }
+  }
   const webhookUrl = `${baseUrl}/api/telegram/webhook`;
   const miniAppUrl = normalizeHttpsUrl(configuredMiniAppUrl || `${baseUrl}/telegram`);
 
   if (!/^https:\/\//.test(miniAppUrl)) fail("TELEGRAM_MINI_APP_URL must use HTTPS.");
+
+  const identity = await callApi("getMe");
+  if (staging) {
+    if (!identity?.is_bot || identity.username?.toLowerCase() !== stage.username ||
+        String(identity.id) !== token.split(":")[0]) {
+      fail("Staging bot identity mismatch; no Telegram changes made.");
+    }
+    const existing = await callApi("getWebhookInfo");
+    if (existing.url && existing.url !== webhookUrl) {
+      fail("Staging bot already targets another webhook; review it manually.");
+    }
+  } else if (identity?.username?.toLowerCase() !== "the_isnad_bot" ||
+             baseUrl !== SITE_URL || miniAppUrl !== SITE_URL + "/telegram") {
+    fail("Production bot identity or origin does not match Isnad; no Telegram changes made.");
+  }
 
   await callApi("setMyCommands", { commands });
   const registeredCommands = await callApi("getMyCommands");
@@ -140,8 +172,7 @@ async function main() {
   });
   console.log(`✓ Menu button opens ${miniAppUrl}`);
 
-  const me = await callApi("getMe");
-  console.log(`Done. @${me.username} is connected to ${baseUrl}.`);
+  console.log(`Done. @${identity.username} is connected to ${baseUrl}.`);
 }
 
-main().catch((error) => fail(error.message || String(error)));
+main().catch(() => fail("Telegram setup failed. Verify target identity, staging configuration and API access."));

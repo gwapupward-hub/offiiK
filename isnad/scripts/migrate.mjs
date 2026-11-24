@@ -2,13 +2,17 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import postgres from "postgres";
+import { validateStagingConfig } from "./staging-preflight.mjs";
 
-const isVercelBuild = process.argv.includes("--vercel-build");
-const vercelEnvironment = process.env.VERCEL_ENV;
-
-if (isVercelBuild && vercelEnvironment !== "production") {
-  console.log(`Skipping database migrations for Vercel environment: ${vercelEnvironment ?? "unknown"}.`);
+// Builds are side-effect free. Migrations are an explicit operator step.
+if (process.argv.includes("--vercel-build")) {
+  console.log("Skipping database migrations during build. Run the approved migration step separately.");
   process.exit(0);
+}
+const staging = process.env.ISNAD_RELEASE_TARGET === "staging";
+if (staging) {
+  try { validateStagingConfig(process.env); }
+  catch { console.error("Invalid staging migration target; no migrations executed."); process.exit(1); }
 }
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -27,6 +31,12 @@ const sql = postgres(databaseUrl, {
 let advisoryLockHeld = false;
 
 try {
+  if (staging) {
+    const [identity] = await sql`SELECT current_database() AS db, current_user AS role`;
+    if (identity.db !== 'isnad_staging' || identity.role !== 'isnad_staging_owner') {
+      throw Error('Connected database identity mismatch; no migrations executed.');
+    }
+  }
   await sql`SELECT pg_advisory_lock(hashtext('isnad_schema_migrations'))`;
   advisoryLockHeld = true;
 
