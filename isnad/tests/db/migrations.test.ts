@@ -22,13 +22,14 @@ test("migrations", { skip: !url && "TEST_DATABASE_URL is not set" }, async (t) =
       "006_community_foundation.sql",
       "007_content_verification.sql",
       "008_source_review_scope.sql",
+      "009_verification_corrections.sql",
     ]);
   });
 
   await t.test("re-running is a no-op", () => {
     const output = runMigrations(url!);
     assert.equal(/Applied/.test(output), false);
-    assert.equal((output.match(/Skipping/g) ?? []).length, 8);
+    assert.equal((output.match(/Skipping/g) ?? []).length, 9);
   });
 
   await t.test("006 is additive and its SQL is idempotent on its own", async () => {
@@ -47,6 +48,19 @@ test("migrations", { skip: !url && "TEST_DATABASE_URL is not set" }, async (t) =
     const destructive = statements.filter((part) => /^(DROP|ALTER|TRUNCATE|DELETE|UPDATE)\b/i.test(part));
     assert.deepEqual(destructive, []);
     await sql.unsafe(contents);
+  });
+
+  await t.test("009 source correction migration is repeatable without losing scoped indexes", async () => {
+    const { readFile } = await import("node:fs/promises");
+    const contents = await readFile("db/migrations/009_verification_corrections.sql", "utf8");
+    await sql.unsafe(contents);
+    const [indexed] = await sql`
+      SELECT
+        to_regclass('public.source_records_community_natural_key_idx') IS NOT NULL AS scoped,
+        to_regclass('public.source_records_legacy_natural_key_idx') IS NOT NULL AS legacy
+    `;
+    assert.equal(indexed.scoped, true);
+    assert.equal(indexed.legacy, true);
   });
 
   await t.test("health check reports the schema as ready", async () => {

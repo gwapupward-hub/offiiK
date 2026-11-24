@@ -42,6 +42,8 @@ const REQUIRED_TABLES = [
   "source_records",
   "verification_requests",
   "verification_findings",
+  "source_correction_events",
+  "verification_correction_notices",
 ] as const;
 
 export function databaseConfigured(): boolean {
@@ -131,7 +133,9 @@ export async function checkDatabase(): Promise<DatabaseHealth> {
         to_regclass('public.community_idempotency_keys') IS NOT NULL AS community_idempotency_keys,
         to_regclass('public.source_records') IS NOT NULL AS source_records,
         to_regclass('public.verification_requests') IS NOT NULL AS verification_requests,
-        to_regclass('public.verification_findings') IS NOT NULL AS verification_findings
+        to_regclass('public.verification_findings') IS NOT NULL AS verification_findings,
+        to_regclass('public.source_correction_events') IS NOT NULL AS source_correction_events,
+        to_regclass('public.verification_correction_notices') IS NOT NULL AS verification_correction_notices
     `;
 
     const missingTables = REQUIRED_TABLES.filter((table) => !tables?.[table]);
@@ -153,6 +157,7 @@ export async function checkDatabase(): Promise<DatabaseHealth> {
       "006_community_foundation.sql",
       "007_content_verification.sql",
       "008_source_review_scope.sql",
+      "009_verification_corrections.sql",
     ];
 
     return {

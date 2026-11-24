@@ -12,7 +12,7 @@ export type DraftSource = {
 export type ReviewDecision = "approve" | "revoke";
 export type ReviewResult =
   | { kind: "approved"; id: string }
-  | { kind: "revoked"; id: string }
+  | { kind: "revoked"; id: string; affectedFindings: number }
   | { kind: "not_found" }
   | { kind: "conflict" }
   | { kind: "self_review" };
@@ -85,8 +85,12 @@ export async function submitSourceDraft(input: {
 /** Reviewer cannot approve their own draft; transitions are row-locked and audited. */
 export async function reviewSourceRecord(input: {
   communityId:string; sourceId:string; actorUserId:string; actorTelegramUserId:number;
-  correlationId:string; decision:ReviewDecision;
+  correlationId:string; decision:ReviewDecision; reason?:string;
 }): Promise<ReviewResult> {
+  const reason = input.reason?.trim() ?? "";
+  if (input.decision === "revoke" && (reason.length < 10 || reason.length > 500)) {
+    throw new Error("Revoking a source requires a reason of 10–500 characters.");
+  }
   const sql=getDatabase();
   return sql.begin(async (tx):Promise<ReviewResult> => {
     const rows=await tx.unsafe<Array<{id:string;review_status:"pending"|"approved"|"revoked";submitted_by:string|null;work:string;locator:string}>>(
@@ -101,11 +105,38 @@ export async function reviewSourceRecord(input: {
     const next=input.decision==="approve"?"approved":"revoked";
     await tx.unsafe("UPDATE source_records SET review_status=$1, reviewed_by=$2, reviewed_at=now() "+
       "WHERE id=$3 AND community_id=$4",[next,input.actorUserId,input.sourceId,input.communityId]);
+
+    let affectedFindings = 0;
+    if (next === "revoked") {
+      const [event] = await tx.unsafe<Array<{ id: string }>>(
+        "INSERT INTO source_correction_events " +
+        "(community_id, source_record_id, event_type, reason, actor_user_id) " +
+        "VALUES ($1,$2,'revoked',$3,$4) RETURNING id::text AS id",
+        [input.communityId, input.sourceId, reason, input.actorUserId]
+      );
+      // Only still-retained findings are queued. No raw submission text is copied.
+      const notices = await tx.unsafe<Array<{ id: string }>>(
+        "INSERT INTO verification_correction_notices " +
+        "(community_id, correction_event_id, request_id, finding_id) " +
+        "SELECT $1, $2, r.id, f.id FROM verification_findings f " +
+        "JOIN verification_requests r ON r.id=f.request_id " +
+        "WHERE f.source_record_id=$3 AND r.community_id=$1 AND r.expires_at>now() " +
+        "ON CONFLICT (correction_event_id, finding_id) DO NOTHING RETURNING id::text AS id",
+        [input.communityId, event.id, input.sourceId]
+      );
+      affectedFindings = notices.length;
+      await tx.unsafe(
+        "UPDATE verification_requests SET status='needs_review' WHERE community_id=$1 " +
+        "AND expires_at>now() AND id IN " +
+        "(SELECT request_id FROM verification_findings WHERE source_record_id=$2)",
+        [input.communityId, input.sourceId]
+      );
+    }
     await recordAuditEvent(tx,{communityId:input.communityId,actorUserId:input.actorUserId,
       actorTelegramUserId:input.actorTelegramUserId,action:"source."+next,entityType:"source_record",
       entityId:source.id,before:{state:source.review_status},
-      after:{state:next,work:source.work,locator:source.locator},correlationId:input.correlationId});
-    return {kind:next,id:source.id};
+      after:{state:next,work:source.work,locator:source.locator,affectedFindings},correlationId:input.correlationId});
+    return next === "revoked" ? {kind:"revoked",id:source.id,affectedFindings} : {kind:"approved",id:source.id};
   });
 }
 
@@ -121,4 +152,65 @@ export async function listCommunitySources(communityId:string, limit=30):Promise
     edition:r.edition,sourceVersion:r.source_version,canonicalText:r.canonical_text,
     language:r.language,sourceUrl:r.source_url,licenseNotice:r.license_notice,
     provenance:r.provenance,reviewStatus:r.review_status,createdAt:r.created_at,reviewedAt:r.reviewed_at}));
+}
+
+export type CorrectionQueueItem = {
+  id: string;
+  requestId: string;
+  sourceId: string;
+  status: "needs_review" | "acknowledged";
+  reason: string;
+  work: string;
+  locator: string;
+  createdAt: string;
+};
+
+/** Operator-only correction queue. Raw user text and Telegram IDs are excluded. */
+export async function listSourceCorrections(communityId: string, limit = 50): Promise<CorrectionQueueItem[]> {
+  const sql = getDatabase();
+  const rows = await sql.unsafe<Array<{
+    id: string; request_id: string; source_id: string; status: CorrectionQueueItem["status"];
+    reason: string; work: string; locator: string; created_at: Date;
+  }>>(
+    "SELECT n.id::text AS id,n.request_id::text AS request_id," +
+    "e.source_record_id::text AS source_id,n.status,e.reason,s.work,s.locator,n.created_at " +
+    "FROM verification_correction_notices n " +
+    "JOIN source_correction_events e ON e.id=n.correction_event_id " +
+    "JOIN source_records s ON s.id=e.source_record_id " +
+    "WHERE n.community_id=$1 ORDER BY n.created_at DESC LIMIT $2",
+    [communityId, Math.max(1,Math.min(Math.trunc(limit),100))]
+  );
+  return rows.map(row=>({
+    id:row.id,requestId:row.request_id,sourceId:row.source_id,
+    status:row.status,reason:row.reason,work:row.work,locator:row.locator,
+    createdAt:new Date(row.created_at).toISOString(),
+  }));
+}
+
+export async function acknowledgeSourceCorrection(input: {
+  communityId:string; noticeId:string; actorUserId:string;
+  actorTelegramUserId:number; correlationId:string;
+}): Promise<"acknowledged"|"not_found"|"conflict"> {
+  const sql=getDatabase();
+  return sql.begin(async tx=>{
+    const rows=await tx.unsafe<Array<{id:string;status:string}>>(
+      "SELECT id::text AS id,status FROM verification_correction_notices " +
+      "WHERE id=$1 AND community_id=$2 FOR UPDATE",
+      [input.noticeId,input.communityId]
+    );
+    if(!rows.length)return "not_found";
+    if(rows[0].status!=="needs_review")return "conflict";
+    await tx.unsafe(
+      "UPDATE verification_correction_notices SET status='acknowledged'," +
+      "acknowledged_by=$1,acknowledged_at=now() WHERE id=$2 AND community_id=$3",
+      [input.actorUserId,input.noticeId,input.communityId]
+    );
+    await recordAuditEvent(tx,{
+      communityId:input.communityId,actorUserId:input.actorUserId,
+      actorTelegramUserId:input.actorTelegramUserId,action:"source.correction_acknowledged",
+      entityType:"verification_correction_notice",entityId:input.noticeId,
+      after:{state:"acknowledged"},correlationId:input.correlationId,
+    });
+    return "acknowledged";
+  });
 }
