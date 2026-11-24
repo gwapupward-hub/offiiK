@@ -50,6 +50,19 @@ test("migrations", { skip: !url && "TEST_DATABASE_URL is not set" }, async (t) =
     await sql.unsafe(contents);
   });
 
+  await t.test("009 source correction migration is repeatable without losing scoped indexes", async () => {
+    const { readFile } = await import("node:fs/promises");
+    const contents = await readFile("db/migrations/009_verification_corrections.sql", "utf8");
+    await sql.unsafe(contents);
+    const [indexed] = await sql`
+      SELECT
+        to_regclass('public.source_records_community_natural_key_idx') IS NOT NULL AS scoped,
+        to_regclass('public.source_records_legacy_natural_key_idx') IS NOT NULL AS legacy
+    `;
+    assert.equal(indexed.scoped, true);
+    assert.equal(indexed.legacy, true);
+  });
+
   await t.test("health check reports the schema as ready", async () => {
     const { checkDatabase, getDatabase } = await import("@/lib/db");
     const health = await checkDatabase();
