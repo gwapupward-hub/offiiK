@@ -12,8 +12,8 @@ const resetCommunityScopes = args.includes("--reset-community-commands");
 const communityEnabled = process.env.ISNAD_COMMUNITY_ENABLED === "true";
 const positionalBaseUrl = args.find((arg) => !arg.startsWith("--"));
 
-if (vercelBuild && process.env.VERCEL_ENV !== "production") {
-  console.log(`Skipping Telegram setup for Vercel environment: ${process.env.VERCEL_ENV || "unknown"}.`);
+if (vercelBuild) {
+  console.log("Skipping Telegram setup during build. Run the approved bot setup separately.");
   process.exit(0);
 }
 
@@ -80,10 +80,12 @@ async function callApi(method, body = {}) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    redirect: "error",
+    signal: AbortSignal.timeout(10000),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !data.ok) {
-    fail(`${method} failed: ${data.description || response.statusText}`);
+    fail(`${method} failed. Check Telegram permissions and API access.`);
   }
   return data.result;
 }
@@ -91,7 +93,11 @@ async function callApi(method, body = {}) {
 async function main() {
   // Explicit staging setup only: validate independent identity and target before
   // invoking *any* Telegram mutating method.
-  const staging = process.env.ISNAD_RELEASE_TARGET === "staging";
+  const target = process.env.ISNAD_RELEASE_TARGET;
+  if (target !== "staging" && target !== "production") {
+    fail("Set the explicitly approved release target before changing Telegram configuration.");
+  }
+  const staging = target === "staging";
   let stage;
   if (staging) {
     stage = validateStagingConfig(process.env);
