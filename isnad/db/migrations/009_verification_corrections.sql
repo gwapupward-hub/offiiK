@@ -17,6 +17,8 @@ BEGIN
   FOR old_unique IN
     SELECT conname FROM pg_constraint
     WHERE conrelid = 'source_records'::regclass AND contype = 'u'
+      AND pg_get_constraintdef(oid) =
+        'UNIQUE (source_type, work, locator, edition, language, source_version)'
   LOOP
     EXECUTE format('ALTER TABLE source_records DROP CONSTRAINT %I', old_unique);
   END LOOP;
