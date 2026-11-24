@@ -20,13 +20,14 @@ test("migrations", { skip: !url && "TEST_DATABASE_URL is not set" }, async (t) =
       "004_guided_learning.sql",
       "005_daily_knowledge.sql",
       "006_community_foundation.sql",
+      "007_content_verification.sql",
     ]);
   });
 
   await t.test("re-running is a no-op", () => {
     const output = runMigrations(url!);
     assert.equal(/Applied/.test(output), false);
-    assert.equal((output.match(/Skipping/g) ?? []).length, 6);
+    assert.equal((output.match(/Skipping/g) ?? []).length, 7);
   });
 
   await t.test("006 is additive and its SQL is idempotent on its own", async () => {
@@ -34,6 +35,15 @@ test("migrations", { skip: !url && "TEST_DATABASE_URL is not set" }, async (t) =
     const contents = await readFile("db/migrations/006_community_foundation.sql", "utf8");
     const statements = contents.replace(/--.*$/gm, "").split(";").map((statement) => statement.trim());
     const destructive = statements.filter((statement) => /^(DROP|ALTER|TRUNCATE|DELETE|UPDATE)\b/i.test(statement));
+    assert.deepEqual(destructive, []);
+    await sql.unsafe(contents);
+  });
+
+  await t.test("007 verification schema is additive and idempotent", async () => {
+    const { readFile } = await import("node:fs/promises");
+    const contents = await readFile("db/migrations/007_content_verification.sql", "utf8");
+    const statements = contents.replace(/--.*$/gm, "").split(";").map((part) => part.trim());
+    const destructive = statements.filter((part) => /^(DROP|ALTER|TRUNCATE|DELETE|UPDATE)\b/i.test(part));
     assert.deepEqual(destructive, []);
     await sql.unsafe(contents);
   });
