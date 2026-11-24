@@ -10,7 +10,8 @@ test("C2B independent source review and community-scoped verification", {
   await resetDatabase(url!);
   useTestDatabase(url!);
   const { getDatabase } = await import("@/lib/db");
-  const { parseDraftSource, submitSourceDraft, reviewSourceRecord, listCommunitySources } =
+  const { parseDraftSource, submitSourceDraft, reviewSourceRecord, listCommunitySources,
+    listSourceCorrections, acknowledgeSourceCorrection } =
     await import("@/lib/community/sourceReview");
   const { verifyAndStoreText } = await import("@/lib/community/verificationEvidence");
   const sql = getDatabase();
@@ -41,6 +42,14 @@ test("C2B independent source review and community-scoped verification", {
   });
   assert.equal((await listCommunitySources(communityId)).length, 1);
   assert.equal((await listCommunitySources(otherCommunityId)).length, 0);
+  // Natural keys are community-scoped: the same edition can be queued in B,
+  // but B cannot inherit A's human approval.
+  const otherSourceId = await submitSourceDraft({
+    communityId: otherCommunityId, actorUserId: editor, actorTelegramUserId: 10001,
+    correlationId: "test-other-draft", draft: parsed.value,
+  });
+  assert.notEqual(otherSourceId, id);
+  assert.equal((await listCommunitySources(otherCommunityId)).length, 1);
 
   const request = (group: string, messageId: number) => ({
     communityId: group, telegramUserId: 10001, telegramMessageId: messageId,
@@ -77,16 +86,47 @@ test("C2B independent source review and community-scoped verification", {
   });
   assert.equal(again.kind, "conflict");
 
+  await assert.rejects(reviewSourceRecord({
+    communityId, sourceId: id, actorUserId: reviewer.id, actorTelegramUserId: 10002,
+    correlationId: "test-revoke-missing-reason", decision: "revoke",
+  }));
   const revoked = await reviewSourceRecord({
     communityId, sourceId: id, actorUserId: reviewer.id, actorTelegramUserId: 10002,
     correlationId: "test-revoke", decision: "revoke",
+    reason: "The submitted source record was withdrawn by the reviewer.",
   });
   assert.equal(revoked.kind, "revoked");
+  if (revoked.kind !== "revoked") throw new Error("Expected revocation");
+  assert.equal(revoked.affectedFindings, 1);
+  const corrections = await listSourceCorrections(communityId);
+  assert.equal(corrections.length, 1);
+  assert.equal(corrections[0].status, "needs_review");
+  assert.equal(corrections[0].requestId, matching.requestId);
+  assert.equal((await listSourceCorrections(otherCommunityId)).length, 0);
+  const [affected] = await sql.unsafe<Array<{ status: string }>>(
+    "SELECT status FROM verification_requests WHERE id=$1", [matching.requestId]
+  );
+  assert.equal(affected.status, "needs_review");
+  const wrongCorrection = await acknowledgeSourceCorrection({
+    communityId: otherCommunityId, noticeId: corrections[0].id,
+    actorUserId: other.id, actorTelegramUserId: 10003, correlationId: "ack-cross",
+  });
+  assert.equal(wrongCorrection, "not_found");
+  const acknowledged = await acknowledgeSourceCorrection({
+    communityId, noticeId: corrections[0].id,
+    actorUserId: reviewer.id, actorTelegramUserId: 10002, correlationId: "ack",
+  });
+  assert.equal(acknowledged, "acknowledged");
+  assert.equal((await listSourceCorrections(communityId))[0].status, "acknowledged");
+  assert.equal(await acknowledgeSourceCorrection({
+    communityId, noticeId: corrections[0].id,
+    actorUserId: reviewer.id, actorTelegramUserId: 10002, correlationId: "ack-repeat",
+  }), "conflict");
   const afterRevocation = await verifyAndStoreText(request(communityId, 4));
   assert.equal(afterRevocation.result.status, "inconclusive");
   const actions = await sql.unsafe<Array<{ action: string }>>(
     "SELECT action FROM community_audit_events WHERE community_id=$1 ORDER BY created_at",
     [communityId]
   );
-  assert.deepEqual(actions.map(a=>a.action).sort(), ["source.approved", "source.revoked", "source.submitted"]);
+  assert.deepEqual(actions.map(a=>a.action).sort(), ["source.approved", "source.correction_acknowledged", "source.revoked", "source.submitted"]);
 });
