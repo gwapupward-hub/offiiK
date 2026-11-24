@@ -153,3 +153,64 @@ export async function listCommunitySources(communityId:string, limit=30):Promise
     language:r.language,sourceUrl:r.source_url,licenseNotice:r.license_notice,
     provenance:r.provenance,reviewStatus:r.review_status,createdAt:r.created_at,reviewedAt:r.reviewed_at}));
 }
+
+export type CorrectionQueueItem = {
+  id: string;
+  requestId: string;
+  sourceId: string;
+  status: "needs_review" | "acknowledged";
+  reason: string;
+  work: string;
+  locator: string;
+  createdAt: string;
+};
+
+/** Operator-only correction queue. Raw user text and Telegram IDs are excluded. */
+export async function listSourceCorrections(communityId: string, limit = 50): Promise<CorrectionQueueItem[]> {
+  const sql = getDatabase();
+  const rows = await sql.unsafe<Array<{
+    id: string; request_id: string; source_id: string; status: CorrectionQueueItem["status"];
+    reason: string; work: string; locator: string; created_at: Date;
+  }>>(
+    "SELECT n.id::text AS id,n.request_id::text AS request_id," +
+    "e.source_record_id::text AS source_id,n.status,e.reason,s.work,s.locator,n.created_at " +
+    "FROM verification_correction_notices n " +
+    "JOIN source_correction_events e ON e.id=n.correction_event_id " +
+    "JOIN source_records s ON s.id=e.source_record_id " +
+    "WHERE n.community_id=$1 ORDER BY n.created_at DESC LIMIT $2",
+    [communityId, Math.max(1,Math.min(Math.trunc(limit),100))]
+  );
+  return rows.map(row=>({
+    id:row.id,requestId:row.request_id,sourceId:row.source_id,
+    status:row.status,reason:row.reason,work:row.work,locator:row.locator,
+    createdAt:new Date(row.created_at).toISOString(),
+  }));
+}
+
+export async function acknowledgeSourceCorrection(input: {
+  communityId:string; noticeId:string; actorUserId:string;
+  actorTelegramUserId:number; correlationId:string;
+}): Promise<"acknowledged"|"not_found"|"conflict"> {
+  const sql=getDatabase();
+  return sql.begin(async tx=>{
+    const rows=await tx.unsafe<Array<{id:string;status:string}>>(
+      "SELECT id::text AS id,status FROM verification_correction_notices " +
+      "WHERE id=$1 AND community_id=$2 FOR UPDATE",
+      [input.noticeId,input.communityId]
+    );
+    if(!rows.length)return "not_found";
+    if(rows[0].status!=="needs_review")return "conflict";
+    await tx.unsafe(
+      "UPDATE verification_correction_notices SET status='acknowledged'," +
+      "acknowledged_by=$1,acknowledged_at=now() WHERE id=$2 AND community_id=$3",
+      [input.actorUserId,input.noticeId,input.communityId]
+    );
+    await recordAuditEvent(tx,{
+      communityId:input.communityId,actorUserId:input.actorUserId,
+      actorTelegramUserId:input.actorTelegramUserId,action:"source.correction_acknowledged",
+      entityType:"verification_correction_notice",entityId:input.noticeId,
+      after:{state:"acknowledged"},correlationId:input.correlationId,
+    });
+    return "acknowledged";
+  });
+}
