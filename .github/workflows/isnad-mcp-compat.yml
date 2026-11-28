@@ -8,6 +8,7 @@ on:
       - "isnad/app/connect/**"
       - "isnad/tests/unit/mcp*.test.ts"
       - "isnad/package*.json"
+      - "isnad/docs/mcp/**"
       - "tools/isnad-mcp-compat/**"
       - ".github/workflows/isnad-mcp-compat.yml"
   workflow_dispatch:
@@ -92,4 +93,58 @@ jobs:
             sleep 1
           done
           curl --fail --silent http://127.0.0.1:3478/connect | grep -q "Public access is not available yet"
-          ISNAD_MCP_TEST_ENDPOINT=http://127.0.0.1:3478/api/mcp node --test ../tools/isnad-mcp-compat/compatibility.test.mjs
+          ISNAD_MCP_TEST_ENDPOINT=http://127.0.0.1:3478/api/mcp node --test ../tools/isnad-mcp-compat/compatibility.test.mjs ../tools/isnad-mcp-compat/http-security.test.mjs
+  redis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      redis:
+        image: redis:7.4-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Real isolated Redis atomicity and expiry
+        working-directory: isnad
+        env:
+          ISNAD_TEST_REDIS_CONTAINER: ${{ job.services.redis.id }}
+        run: node --test ../tools/isnad-mcp-compat/redis.integration.test.mjs
+  application-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Audit application runtime and complete dependency graphs
+        working-directory: isnad
+        run: |
+          set +e
+          npm audit --omit=dev --audit-level=high --json > "$RUNNER_TEMP/isnad-runtime-audit.json"
+          runtime_status=$?
+          npm audit --audit-level=high --json > "$RUNNER_TEMP/isnad-full-audit.json"
+          full_status=$?
+          node -e 'for(const p of process.argv.slice(1)){const r=require(p);console.log(p,JSON.stringify(r.metadata?.vulnerabilities??r.error??"audit response missing"));for(const [n,v] of Object.entries(r.vulnerabilities??{})) if(["high","critical"].includes(v.severity)) console.log(JSON.stringify({name:n,severity:v.severity,isDirect:v.isDirect,range:v.range,fixAvailable:v.fixAvailable,via:v.via}));}' \
+            "$RUNNER_TEMP/isnad-runtime-audit.json" "$RUNNER_TEMP/isnad-full-audit.json"
+          report_status=$?
+          test "$runtime_status" -eq 0 && test "$full_status" -eq 0 && test "$report_status" -eq 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: isnad-application-audit
+          path: |
+            ${{ runner.temp }}/isnad-runtime-audit.json
+            ${{ runner.temp }}/isnad-full-audit.json
+          if-no-files-found: error
+          retention-days: 7
