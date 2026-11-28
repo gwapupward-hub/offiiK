@@ -1,10 +1,13 @@
 import { createIsnadHandler } from "@/lib/mcp/sdk";
+import { admitMcpRequest } from "@/lib/mcp/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const maxBytes = 8192;
 const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 let handler: ReturnType<typeof createIsnadHandler> | undefined;
+let active = 0;
+const maxActive = 8;
 
 function guard(request: Request): Response | undefined {
   if (process.env.ISNAD_MCP_ENABLED !== "true") return new Response(null, { status: 404, headers });
@@ -65,9 +68,14 @@ async function boundedRequest(request: Request): Promise<Request | Response> {
 async function serve(request: Request): Promise<Response> {
   const blocked = guard(request);
   if (blocked) return blocked;
-  const input = request.method === "POST" ? await boundedRequest(request) : request;
-  if (input instanceof Response) return input;
+  if (active >= maxActive) return new Response(null, { status: 503, headers: { ...headers, "Retry-After": "1" } });
+  active++;
   try {
+    const admitted = await admitMcpRequest(new URL(request.url).host);
+    if (admitted === "limited") return new Response(null, { status: 429, headers: { ...headers, "Retry-After": "60" } });
+    if (admitted !== "allow") return new Response(null, { status: 503, headers });
+    const input = request.method === "POST" ? await boundedRequest(request) : request;
+    if (input instanceof Response) return input;
     handler ??= createIsnadHandler();
     const response = await (await handler).fetch(input);
     const safeHeaders = new Headers(response.headers);
@@ -76,6 +84,8 @@ async function serve(request: Request): Promise<Response> {
   } catch {
     handler = undefined;
     return new Response(null, { status: 503, headers });
+  } finally {
+    active--;
   }
 }
 
