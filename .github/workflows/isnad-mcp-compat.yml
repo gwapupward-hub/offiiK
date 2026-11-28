@@ -1,0 +1,151 @@
+name: Isnad MCP compatibility candidate
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "isnad/lib/mcp/**"
+      - "isnad/app/api/mcp/**"
+      - "isnad/app/connect/**"
+      - "isnad/tests/unit/mcp*.test.ts"
+      - "isnad/package*.json"
+      - "isnad/next.config.ts"
+      - "isnad/docs/mcp/**"
+      - "tools/isnad-mcp-compat/**"
+      - ".github/workflows/isnad-mcp-compat.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sdk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install frozen candidate dependencies and audit
+        working-directory: tools/isnad-mcp-compat
+        run: |
+          npm ci --ignore-scripts
+          npm audit --audit-level=high
+      - name: Test both protocol generations with real SDK clients
+        working-directory: isnad
+        run: node --test ../tools/isnad-mcp-compat/compatibility.test.mjs
+      - name: Generate and verify portable skill archives locally
+        working-directory: isnad
+        run: |
+          node ../tools/isnad-mcp-compat/package-skills.mjs "$RUNNER_TEMP/isnad-skills"
+          python - <<'PY'
+          import os, pathlib, zipfile
+          root = pathlib.Path(os.environ["RUNNER_TEMP"]) / "isnad-skills"
+          skills = sorted(root.iterdir())
+          assert len(skills) == 9
+          for skill in skills:
+              archive = root.parent / (skill.name + ".zip")
+              with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
+                  for file in sorted(skill.rglob("*")):
+                      if file.is_file():
+                          z.write(file, file.relative_to(root))
+              with zipfile.ZipFile(archive) as z:
+                  assert z.testzip() is None
+                  assert sorted(z.namelist()) == [skill.name + "/SKILL.md", skill.name + "/references/methodology.md"]
+                  assert z.read(skill.name + "/references/methodology.md") == (skill / "references/methodology.md").read_bytes()
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: isnad-mcp-candidate-lockfile
+          path: tools/isnad-mcp-compat/package-lock.json
+          if-no-files-found: error
+          retention-days: 7
+  application:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: isnad
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: isnad/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Lint MCP application sources
+        run: npx eslint lib/mcp app/api/mcp app/connect tests/unit/mcp.test.ts tests/unit/mcpRateLimit.test.ts
+      - name: Install frozen compatibility client
+        working-directory: tools/isnad-mcp-compat
+        run: npm ci --ignore-scripts
+      - name: Verify actual Next.js production endpoint locally
+        run: |
+          ISNAD_MCP_ENABLED=true ISNAD_MCP_LIMIT_MODE=local ISNAD_MCP_ALLOWED_HOST=127.0.0.1:3478 npm run start -- --hostname 127.0.0.1 --port 3478 > "$RUNNER_TEMP/isnad-mcp-next.log" 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true; cat "$RUNNER_TEMP/isnad-mcp-next.log"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -s -o /dev/null http://127.0.0.1:3478/api/mcp; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:3478/connect | grep -q "Public access is not available yet"
+          ISNAD_MCP_TEST_ENDPOINT=http://127.0.0.1:3478/mcp node --test ../tools/isnad-mcp-compat/compatibility.test.mjs ../tools/isnad-mcp-compat/http-security.test.mjs
+  redis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      redis:
+        image: redis:7.4-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Real isolated Redis atomicity and expiry
+        working-directory: isnad
+        env:
+          ISNAD_TEST_REDIS_CONTAINER: ${{ job.services.redis.id }}
+        run: node --test ../tools/isnad-mcp-compat/redis.integration.test.mjs
+  application-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Audit application runtime and complete dependency graphs
+        working-directory: isnad
+        run: |
+          set +e
+          npm audit --omit=dev --audit-level=high --json > "$RUNNER_TEMP/isnad-runtime-audit.json"
+          runtime_status=$?
+          npm audit --audit-level=high --json > "$RUNNER_TEMP/isnad-full-audit.json"
+          full_status=$?
+          node -e 'for(const p of process.argv.slice(1)){const r=require(p);console.log(p,JSON.stringify(r.metadata?.vulnerabilities??r.error??"audit response missing"));for(const [n,v] of Object.entries(r.vulnerabilities??{})) if(["high","critical"].includes(v.severity)) console.log(JSON.stringify({name:n,severity:v.severity,isDirect:v.isDirect,range:v.range,fixAvailable:v.fixAvailable,via:v.via}));}' \
+            "$RUNNER_TEMP/isnad-runtime-audit.json" "$RUNNER_TEMP/isnad-full-audit.json"
+          report_status=$?
+          test "$runtime_status" -eq 0 && test "$full_status" -eq 0 && test "$report_status" -eq 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: isnad-application-audit
+          path: |
+            ${{ runner.temp }}/isnad-runtime-audit.json
+            ${{ runner.temp }}/isnad-full-audit.json
+          if-no-files-found: error
+          retention-days: 7

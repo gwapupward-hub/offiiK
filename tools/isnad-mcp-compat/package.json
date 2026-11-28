@@ -1,0 +1,17 @@
+{
+  "name": "isnad-mcp-compat",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.4.0",
+    "@modelcontextprotocol/client": "2.4.0",
+    "zod": "4.6.7"
+  },
+  "scripts": {
+    "test": "node --test compatibility.test.mjs"
+  }
+}
