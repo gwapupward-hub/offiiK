@@ -15,6 +15,7 @@
     "test:db": "tsx --test --test-concurrency=1 \"tests/db/**/*.test.ts\""
   },
   "dependencies": {
+    "@modelcontextprotocol/server": "2.4.0",
     "@tailwindcss/typography": "^0.5.20",
     "@twa-dev/sdk": "^8.0.2",
     "next": "16.3.3",
@@ -23,7 +24,8 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
