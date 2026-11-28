@@ -1,0 +1,81 @@
+name: Isnad MCP compatibility candidate
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "isnad/lib/mcp/**"
+      - "isnad/app/api/mcp/**"
+      - "tools/isnad-mcp-compat/**"
+      - ".github/workflows/isnad-mcp-compat.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sdk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Resolve candidate dependencies (first lockfile generation)
+        working-directory: tools/isnad-mcp-compat
+        run: |
+          if test -f package-lock.json; then
+            npm ci --ignore-scripts
+          else
+            npm install --package-lock-only --ignore-scripts
+            npm ci --ignore-scripts
+          fi
+          npm audit --audit-level=high
+      - name: Test both protocol generations with real SDK clients
+        working-directory: isnad
+        run: node --test ../tools/isnad-mcp-compat/compatibility.test.mjs
+      - name: Generate and verify portable skill archives locally
+        working-directory: isnad
+        run: |
+          node ../tools/isnad-mcp-compat/package-skills.mjs "$RUNNER_TEMP/isnad-skills"
+          python - <<'PY'
+          import os, pathlib, zipfile
+          root = pathlib.Path(os.environ["RUNNER_TEMP"]) / "isnad-skills"
+          skills = sorted(root.iterdir())
+          assert len(skills) == 9
+          for skill in skills:
+              archive = root.parent / (skill.name + ".zip")
+              with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
+                  for file in sorted(skill.rglob("*")):
+                      if file.is_file():
+                          z.write(file, file.relative_to(root))
+              with zipfile.ZipFile(archive) as z:
+                  assert z.testzip() is None
+                  assert sorted(z.namelist()) == [skill.name + "/SKILL.md", skill.name + "/references/methodology.md"]
+                  assert z.read(skill.name + "/references/methodology.md") == (skill / "references/methodology.md").read_bytes()
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: isnad-mcp-candidate-lockfile
+          path: tools/isnad-mcp-compat/package-lock.json
+          if-no-files-found: error
+          retention-days: 7
+  application:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: isnad
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: isnad/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
