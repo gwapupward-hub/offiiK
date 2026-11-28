@@ -21,15 +21,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - name: Resolve candidate dependencies (first lockfile generation)
+      - name: Install frozen candidate dependencies and audit
         working-directory: tools/isnad-mcp-compat
         run: |
-          if test -f package-lock.json; then
-            npm ci --ignore-scripts
-          else
-            npm install --package-lock-only --ignore-scripts
-            npm ci --ignore-scripts
-          fi
+          npm ci --ignore-scripts
           npm audit --audit-level=high
       - name: Test both protocol generations with real SDK clients
         working-directory: isnad
@@ -79,3 +74,18 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: Lint MCP application sources
+        run: npx eslint lib/mcp app/api/mcp tests/unit/mcp.test.ts
+      - name: Install frozen compatibility client
+        working-directory: tools/isnad-mcp-compat
+        run: npm ci --ignore-scripts
+      - name: Verify actual Next.js production endpoint locally
+        run: |
+          ISNAD_MCP_ENABLED=true ISNAD_MCP_ALLOWED_HOST=127.0.0.1:3478 npm run start -- --hostname 127.0.0.1 --port 3478 > "$RUNNER_TEMP/isnad-mcp-next.log" 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true; cat "$RUNNER_TEMP/isnad-mcp-next.log"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -s -o /dev/null http://127.0.0.1:3478/api/mcp; then break; fi
+            sleep 1
+          done
+          ISNAD_MCP_TEST_ENDPOINT=http://127.0.0.1:3478/api/mcp node --test ../tools/isnad-mcp-compat/compatibility.test.mjs
