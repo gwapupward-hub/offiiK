@@ -1,111 +1,84 @@
-import { getSkill, REGISTRY_VERSION, resources, tools } from "@/lib/mcp/registry";
+import { createIsnadHandler } from "@/lib/mcp/sdk";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-const versions = ["2025-11-25", "2025-06-18", "2025-03-26"];
 const maxBytes = 8192;
 const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
-type Dict = Record<string, unknown>;
-const object = (value: unknown): value is Dict => typeof value === "object" && value !== null && !Array.isArray(value);
-const json = (value: unknown, status = 200) => Response.json(value, { status, headers });
-const rpcError = (id: unknown, code: number, message: string, status = 200) =>
-  json({ jsonrpc: "2.0", id, error: { code, message } }, status);
-const result = (id: unknown, value: unknown) => json({ jsonrpc: "2.0", id, result: value });
+let handler: ReturnType<typeof createIsnadHandler> | undefined;
+
 function guard(request: Request): Response | undefined {
   if (process.env.ISNAD_MCP_ENABLED !== "true") return new Response(null, { status: 404, headers });
+  // Exact operator-configured ingress host, including a port for local testing.
+  // Reject missing host and forwarded-host spoofing; do not trust forwarded headers.
+  const host = process.env.ISNAD_MCP_ALLOWED_HOST;
+  if (!host || request.headers.get("host") !== host || new URL(request.url).host !== host) {
+    return new Response(null, { status: 403, headers });
+  }
   const origin = request.headers.get("origin");
-  // Native clients omit Origin; browser-origin calls require an explicit operator allowlist.
   if (origin !== null && (!process.env.ISNAD_MCP_ALLOWED_ORIGIN || origin !== process.env.ISNAD_MCP_ALLOWED_ORIGIN)) {
     return new Response(null, { status: 403, headers });
   }
   return undefined;
 }
-async function readBody(request: Request): Promise<unknown> {
+
+async function boundedRequest(request: Request): Promise<Request | Response> {
+  const mediaType = request.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
+  if (mediaType !== "application/json") return new Response(null, { status: 415, headers });
+  const sizeHeader = request.headers.get("content-length");
+  if (sizeHeader !== null && (!/^\d+$/.test(sizeHeader) || Number(sizeHeader) > maxBytes)) {
+    return new Response(null, { status: 413, headers });
+  }
   const reader = request.body?.getReader();
-  if (!reader) throw new SyntaxError("Missing body");
+  if (!reader) return new Response(null, { status: 400, headers });
   const chunks: Uint8Array[] = [];
   let size = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error("body_timeout")), 5000);
+    });
     while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await Promise.race([reader.read(), deadline]);
       if (done) break;
       size += value.byteLength;
       if (size > maxBytes) {
-        await reader.cancel();
-        throw new RangeError("Body too large");
+        void reader.cancel().catch(() => {});
+        return new Response(null, { status: 413, headers });
       }
       chunks.push(value);
     }
-    return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(Buffer.concat(chunks)));
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+    const cleanHeaders = new Headers(request.headers);
+    cleanHeaders.delete("content-length");
+    return new Request(request.url, { method: request.method, headers: cleanHeaders, body: bytes, signal: request.signal });
+  } catch {
+    void reader.cancel().catch(() => {});
+    return new Response(null, { status: 408, headers });
   } finally {
+    if (timer) clearTimeout(timer);
     reader.releaseLock();
   }
 }
-export function GET(request: Request) {
-  return guard(request) ?? new Response(null, { status: 405, headers: { ...headers, Allow: "POST" } });
-}
-export function DELETE(request: Request) {
-  return GET(request);
-}
-export async function POST(request: Request) {
+
+async function serve(request: Request): Promise<Response> {
   const blocked = guard(request);
   if (blocked) return blocked;
-  if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") {
-    return new Response(null, { status: 415, headers });
-  }
-  const accept = request.headers.get("accept")?.toLowerCase() ?? "";
-  if (!accept.includes("application/json") || !accept.includes("text/event-stream")) {
-    return new Response(null, { status: 406, headers });
-  }
-  const protocol = request.headers.get("mcp-protocol-version");
-  if (protocol && !versions.includes(protocol)) return rpcError(null, -32600, "Unsupported protocol version", 400);
-  let body: unknown;
-  try { body = await readBody(request); }
-  catch (error) { return rpcError(null, -32700, "Invalid or oversized JSON", error instanceof RangeError ? 413 : 400); }
-  if (!object(body) || body.jsonrpc !== "2.0" || typeof body.method !== "string" ||
-    ("id" in body && typeof body.id !== "string" && (typeof body.id !== "number" || !Number.isSafeInteger(body.id)))) {
-    return rpcError(null, -32600, "Invalid request", 400);
-  }
-  if (!("id" in body)) return new Response(null, { status: 202, headers });
-  const { id, method } = body;
-  const params = body.params === undefined ? {} : body.params;
-  if (!object(params)) return rpcError(id, -32602, "Invalid parameters");
+  const input = request.method === "POST" ? await boundedRequest(request) : request;
+  if (input instanceof Response) return input;
   try {
-    switch (method) {
-      case "initialize":
-        if (typeof params.protocolVersion !== "string" || !object(params.capabilities) || !object(params.clientInfo) ||
-          typeof params.clientInfo.name !== "string" || typeof params.clientInfo.version !== "string") {
-          return rpcError(id, -32602, "Invalid initialization");
-        }
-        return result(id, {
-          protocolVersion: versions.includes(params.protocolVersion) ? params.protocolVersion : versions[0],
-          capabilities: { tools: {}, resources: {} },
-          serverInfo: { name: "isnad-mcp", version: REGISTRY_VERSION },
-          instructions: "Read-only educational skill delivery. No question processing or verified evidence service. Core governs all specialists; host policies take precedence.",
-        });
-      case "ping": return result(id, {});
-      case "tools/list": return result(id, { tools });
-      case "resources/list": return result(id, { resources });
-      case "resources/templates/list": return result(id, { resourceTemplates: [] });
-      case "tools/call": {
-        if (typeof params.name !== "string" ||
-          (params.arguments !== undefined && (!object(params.arguments) || Object.keys(params.arguments).length !== 0))) {
-          return rpcError(id, -32602, "Tool accepts no arguments");
-        }
-        const text = getSkill(params.name);
-        if (!text) return rpcError(id, -32602, "Unknown skill");
-        return result(id, { content: [{ type: "text", text }] });
-      }
-      case "resources/read": {
-        const resource = resources.find(entry => entry.uri === params.uri);
-        if (!resource) return rpcError(id, -32602, "Unknown resource");
-        const text = getSkill(resource.name);
-        if (!text) return rpcError(id, -32603, "Resource unavailable");
-        return result(id, { contents: [{ uri: resource.uri, mimeType: resource.mimeType, text }] });
-      }
-      default: return rpcError(id, -32601, "Method not found");
-    }
+    handler ??= createIsnadHandler();
+    const response = await (await handler).fetch(input);
+    const safeHeaders = new Headers(response.headers);
+    for (const [name, value] of Object.entries(headers)) safeHeaders.set(name, value);
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers: safeHeaders });
   } catch {
-    return rpcError(id, -32603, "Skill unavailable");
+    handler = undefined;
+    return new Response(null, { status: 503, headers });
   }
 }
+
+export const POST = serve;
+export const GET = serve;
+export const DELETE = serve;
