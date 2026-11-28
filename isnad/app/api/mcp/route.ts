@@ -12,9 +12,10 @@ const maxActive = 8;
 function guard(request: Request): Response | undefined {
   if (process.env.ISNAD_MCP_ENABLED !== "true") return new Response(null, { status: 404, headers });
   // Exact operator-configured ingress host, including a port for local testing.
-  // Reject missing host and forwarded-host spoofing; do not trust forwarded headers.
+  // Next.js can reconstruct request.url with an internal hostname. Validate the actual
+  // HTTP Host header, not that reconstructed URL or any forwarded headers.
   const host = process.env.ISNAD_MCP_ALLOWED_HOST;
-  if (!host || request.headers.get("host") !== host || new URL(request.url).host !== host) {
+  if (!host || request.headers.get("host") !== host) {
     return new Response(null, { status: 403, headers });
   }
   const origin = request.headers.get("origin");
@@ -71,7 +72,7 @@ async function serve(request: Request): Promise<Response> {
   if (active >= maxActive) return new Response(null, { status: 503, headers: { ...headers, "Retry-After": "1" } });
   active++;
   try {
-    const admitted = await admitMcpRequest(new URL(request.url).host);
+    const admitted = await admitMcpRequest(request.headers.get("host") ?? "");
     if (admitted === "limited") return new Response(null, { status: 429, headers: { ...headers, "Retry-After": "60" } });
     if (admitted !== "allow") return new Response(null, { status: 503, headers });
     const input = request.method === "POST" ? await boundedRequest(request) : request;
