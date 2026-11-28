@@ -16,12 +16,13 @@ test("portable skill manifests preserve every pinned bundle", () => {
 });
 for (const [era, mode] of [["legacy", "legacy"], ["modern", { pin: "2026-07-28" }]]) {
   test("real SDK client: " + era, { timeout: 30000 }, async () => {
-    const handler = await createCandidate();
+    const endpoint = process.env.ISNAD_MCP_TEST_ENDPOINT;
+    const handler = endpoint ? undefined : await createCandidate();
     const client = new Client({ name: "isnad-compat", version: "1.0.0" }, { versionNegotiation: { mode } });
     try {
-      const transport = new StreamableHTTPClientTransport(new URL("http://test.local/mcp"), {
+      const transport = new StreamableHTTPClientTransport(new URL(endpoint ?? "http://test.local/mcp"), handler ? {
         fetch: (url, init) => handler.fetch(new Request(url, init)),
-      });
+      } : {});
       await client.connect(transport);
       assert.equal(client.getProtocolEra(), era);
       const list = await client.listTools();
@@ -58,7 +59,7 @@ for (const [era, mode] of [["legacy", "legacy"], ["modern", { pin: "2026-07-28" 
       }
     } finally {
       await client.close();
-      await handler.close();
+      await handler?.close();
     }
   });
 }
