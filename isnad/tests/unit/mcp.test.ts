@@ -48,6 +48,8 @@ test("SDK application route is disabled by default and enforces ingress bounds",
     assert.equal((await POST(request(rpc("tools/list"), { "content-type": "text/plain" }))).status, 415);
     assert.equal((await POST(request(rpc("ping", { value: "x".repeat(9000) })))).status, 413);
     assert.equal((await POST(request(rpc("ping"), { "content-length": "9000" }))).status, 413);
+    const reconstructed = new Request("http://localhost:3478/api/mcp", { method: "POST", headers: { host: "127.0.0.1:3478", "content-type": "text/plain" }, body: "{}" });
+    assert.equal((await POST(reconstructed)).status, 415);
     const response = await POST(request(rpc("initialize", { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "test", version: "1" } })));
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("cache-control"), "no-store");
