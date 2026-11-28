@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
+import { SkillsClient } from "@modelcontextprotocol/client/ext/skills";
 import { buildSkillFiles, createCandidate } from "./server.mjs";
 import { tools, getSkill } from "../../isnad/lib/mcp/registry.ts";
 
@@ -37,6 +38,24 @@ for (const [era, mode] of [["legacy", "legacy"], ["modern", { pin: "2026-07-28" 
       const finance = await client.readResource({ uri: "isnad://skills/muamalat_expert" });
       assert.equal(finance.contents[0].text, getSkill("muamalat_expert"));
       await assert.rejects(client.readResource({ uri: "file:///etc/passwd" }));
+      const skills = new SkillsClient(client);
+      assert.equal(skills.supported, true);
+      const listing = await skills.list();
+      assert.equal(listing.invalid.length, 0);
+      assert.equal(listing.skills.length, 9);
+      const files = buildSkillFiles();
+      for (const entry of listing.skills) {
+        const slug = entry.frontmatter.name;
+        const { skill } = await skills.get(entry.uri);
+        assert.equal(skill.frontmatter.name, slug);
+        const manifest = await skills.read(skill);
+        assert.equal(manifest.verified, true);
+        assert.equal(Buffer.from(manifest.bytes).toString("utf8"), files[slug + "/SKILL.md"]);
+        const reference = await skills.read(skill, "references/methodology.md");
+        assert.equal(reference.verified, true);
+        assert.equal(Buffer.from(reference.bytes).toString("utf8"), files[slug + "/references/methodology.md"]);
+        await assert.rejects(skills.read(skill, "../../.env"));
+      }
     } finally {
       await client.close();
       await handler.close();
