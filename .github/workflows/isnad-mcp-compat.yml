@@ -5,6 +5,9 @@ on:
     paths:
       - "isnad/lib/mcp/**"
       - "isnad/app/api/mcp/**"
+      - "isnad/app/connect/**"
+      - "isnad/tests/unit/mcp*.test.ts"
+      - "isnad/package*.json"
       - "tools/isnad-mcp-compat/**"
       - ".github/workflows/isnad-mcp-compat.yml"
   workflow_dispatch:
@@ -75,17 +78,18 @@ jobs:
       - run: npm test
       - run: npm run build
       - name: Lint MCP application sources
-        run: npx eslint lib/mcp app/api/mcp tests/unit/mcp.test.ts
+        run: npx eslint lib/mcp app/api/mcp app/connect tests/unit/mcp.test.ts tests/unit/mcpRateLimit.test.ts
       - name: Install frozen compatibility client
         working-directory: tools/isnad-mcp-compat
         run: npm ci --ignore-scripts
       - name: Verify actual Next.js production endpoint locally
         run: |
-          ISNAD_MCP_ENABLED=true ISNAD_MCP_ALLOWED_HOST=127.0.0.1:3478 npm run start -- --hostname 127.0.0.1 --port 3478 > "$RUNNER_TEMP/isnad-mcp-next.log" 2>&1 &
+          ISNAD_MCP_ENABLED=true ISNAD_MCP_LIMIT_MODE=local ISNAD_MCP_ALLOWED_HOST=127.0.0.1:3478 npm run start -- --hostname 127.0.0.1 --port 3478 > "$RUNNER_TEMP/isnad-mcp-next.log" 2>&1 &
           server=$!
           trap 'kill "$server" 2>/dev/null || true; cat "$RUNNER_TEMP/isnad-mcp-next.log"' EXIT
           for attempt in $(seq 1 30); do
             if curl -s -o /dev/null http://127.0.0.1:3478/api/mcp; then break; fi
             sleep 1
           done
+          curl --fail --silent http://127.0.0.1:3478/connect | grep -q "Public access is not available yet"
           ISNAD_MCP_TEST_ENDPOINT=http://127.0.0.1:3478/api/mcp node --test ../tools/isnad-mcp-compat/compatibility.test.mjs
