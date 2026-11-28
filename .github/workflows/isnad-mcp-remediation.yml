@@ -1,0 +1,58 @@
+name: Isnad MCP dependency remediation candidate
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/isnad-mcp-remediation.yml"
+      - "isnad/package*.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: isnad
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Resolve narrowly scoped patched versions
+        run: |
+          cp package-lock.json "$RUNNER_TEMP/lock-before.json"
+          node --input-type=commonjs <<'JS'
+          const fs=require("node:fs");
+          const p=JSON.parse(fs.readFileSync("package.json","utf8"));
+          p.dependencies.next="16.4.6";
+          p.devDependencies["eslint-config-next"]="16.4.6";
+          p.overrides={...p.overrides, "sharp":"0.35.5", "source-map-js":"1.2.2", "brace-expansion@1.x":"1.1.21", "brace-expansion@5.x":"5.0.12"};
+          fs.writeFileSync("package.json",JSON.stringify(p,null,2)+"\n");
+          JS
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts
+          node --input-type=commonjs <<'JS'
+          const fs=require("node:fs");
+          const old=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/lock-before.json","utf8"));
+          const next=JSON.parse(fs.readFileSync("package-lock.json","utf8"));
+          const changed=Object.fromEntries(Object.entries(next.packages).filter(([k,v])=>JSON.stringify(old.packages[k])!==JSON.stringify(v)));
+          const removed=Object.keys(old.packages).filter(k=>!(k in next.packages));
+          const delta={manifest:JSON.parse(fs.readFileSync("package.json","utf8")),root:Object.fromEntries(Object.entries(next).filter(([k])=>k!=="packages")),changed,removed};
+          fs.writeFileSync(process.env.RUNNER_TEMP+"/lock-delta.json",JSON.stringify(delta));
+          console.log("ISNAD_LOCK_DELTA="+Buffer.from(JSON.stringify(delta)).toString("base64"));
+          JS
+      - name: Audit candidate
+        run: npm audit --audit-level=high
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: isnad-remediation-lock-candidate
+          path: |
+            isnad/package.json
+            isnad/package-lock.json
+            ${{ runner.temp }}/lock-delta.json
+          retention-days: 7
