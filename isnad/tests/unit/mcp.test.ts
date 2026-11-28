@@ -27,20 +27,22 @@ test("finance preserves Core > Fiqh > Muamalat; rejects path traversal", () => {
   }
 });
 test("SDK application route is disabled by default and enforces ingress bounds", async () => {
-  const keys = ["ISNAD_MCP_ENABLED", "ISNAD_MCP_ALLOWED_HOST", "ISNAD_MCP_ALLOWED_ORIGIN"] as const;
+  const keys = ["ISNAD_MCP_ENABLED", "ISNAD_MCP_ALLOWED_HOST", "ISNAD_MCP_ALLOWED_ORIGIN", "ISNAD_MCP_LIMIT_MODE"] as const;
   const previous = keys.map(key => process.env[key]);
-  const request = (body: unknown, extra: Record<string,string> = {}) => new Request("https://isnad.example/api/mcp", {
-    method: "POST", headers: { host: "isnad.example", "content-type": "application/json", accept: "application/json, text/event-stream", ...extra },
+  const request = (body: unknown, extra: Record<string,string> = {}) => new Request("http://127.0.0.1:3478/api/mcp", {
+    method: "POST", headers: { host: "127.0.0.1:3478", "content-type": "application/json", accept: "application/json, text/event-stream", ...extra },
     body: JSON.stringify(body),
   });
   const rpc = (method: string, params?: unknown) => ({ jsonrpc: "2.0", id: 1, method, params });
   try {
     for (const key of keys) delete process.env[key];
     assert.equal((await POST(request(rpc("tools/list")))).status, 404);
-    assert.equal((await GET(new Request("https://isnad.example/api/mcp"))).status, 404);
+    assert.equal((await GET(new Request("http://127.0.0.1:3478/api/mcp"))).status, 404);
     process.env.ISNAD_MCP_ENABLED = "true";
     assert.equal((await POST(request(rpc("tools/list")))).status, 403);
-    process.env.ISNAD_MCP_ALLOWED_HOST = "isnad.example";
+    process.env.ISNAD_MCP_ALLOWED_HOST = "127.0.0.1:3478";
+    assert.equal((await POST(request(rpc("ping")))).status, 503);
+    process.env.ISNAD_MCP_LIMIT_MODE = "local";
     assert.equal((await POST(request(rpc("tools/list"), { host: "evil.example" }))).status, 403);
     assert.equal((await POST(request(rpc("tools/list"), { origin: "https://evil.example" }))).status, 403);
     assert.equal((await POST(request(rpc("tools/list"), { "content-type": "text/plain" }))).status, 415);
